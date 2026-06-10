@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Mi App</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg:#0a0a0a; --bg2:#141414; --bg3:#1c1c1c; --bg4:#242424;
+  --border:#2a2a2a; --border2:#333;
+  --text:#f0f0f0; --text2:#aaa; --text3:#555;
+  --accent:#7c3aed; --accent2:#a78bfa; --accent-bg:#1e1530;
+  --green:#4ade80; --green-bg:#0f2a1a;
+  --red:#f87171; --red-bg:#2a0f0f;
+  --yellow:#fbbf24; --yellow-bg:#2a1f0a;
+  --font:'Inter',sans-serif;
+  --r:12px; --r-sm:8px;
+  --nav-h:48px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;}
+#app{height:100%;display:flex;flex-direction:column;max-width:500px;margin:0 auto;background:var(--bg);}
+
+/* TOP NAV */
+.top-nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:6px 6px;display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0;align-items:center;justify-content:space-between;}
+.top-nav-inner{display:flex;gap:4px;flex-wrap:wrap;flex:1;}
+.tnav-btn{padding:5px 10px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text3);font-family:var(--font);font-size:11px;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.tnav-btn.active{border-color:var(--accent);color:var(--accent2);background:var(--accent-bg);}
+.tnav-menu{width:30px;height:30px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:16px;}
+
+/* SCREENS */
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.screen.active{display:flex;}
+.screen-body{flex:1;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch;}
+.screen-body::-webkit-scrollbar{display:none;}
+
+/* HEADER */
+.header{padding:14px 14px 10px;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0;}
+.header h1{font-size:19px;font-weight:600;}
+.header p{font-size:12px;color:var(--text3);margin-top:2px;}
+
+/* CARDS */
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:10px;}
+.card:last-child{margin-bottom:0;}
+.card-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+
+/* ROWS */
+.row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.row:last-child{border-bottom:none;padding-bottom:0;}
+.row:first-child{padding-top:0;}
+.row-label{color:var(--text2);font-size:13px;}
+.row-sub{color:var(--text3);font-size:11px;margin-top:2px;}
+.row-value{font-size:13px;font-weight:500;color:var(--text);}
+.row-value.pos{color:var(--green);}
+.row-value.neg{color:var(--red);}
+.row-value.dim{color:var(--text3);font-style:italic;font-weight:400;}
+
+/* TAGS */
+.tag{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:6px;font-size:11px;font-weight:500;}
+.tag-green{background:var(--green-bg);color:var(--green);}
+.tag-red{background:var(--red-bg);color:var(--red);}
+.tag-yellow{background:var(--yellow-bg);color:var(--yellow);}
+.tag-purple{background:var(--accent-bg);color:var(--accent2);}
+.tag-gray{background:var(--bg4);color:var(--text3);}
+
+/* PILLS */
+.pills{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;}
+.pills::-webkit-scrollbar{display:none;}
+.pill{flex-shrink:0;padding:5px 11px;border-radius:20px;border:1px solid var(--border2);color:var(--text3);font-size:12px;cursor:pointer;font-family:var(--font);background:transparent;transition:all .15s;}
+.pill.active{border-color:var(--accent);color:var(--accent2);background:var(--accent-bg);}
+
+/* BUTTONS */
+.btn{padding:11px 18px;border-radius:var(--r-sm);border:none;font-family:var(--font);font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px;}
+.btn-primary{background:var(--accent);color:white;}
+.btn-secondary{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+.btn-full{width:100%;justify-content:center;}
+.btn-fab{position:fixed;bottom:70px;right:16px;width:50px;height:50px;border-radius:50%;background:var(--accent);border:none;color:white;font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(124,58,237,.4);z-index:10;}
+
+/* FORM */
+.form-group{margin-bottom:13px;}
+.form-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px;display:block;}
+.form-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;transition:border-color .15s;}
+.form-input:focus{border-color:var(--accent);}
+.form-input::placeholder{color:var(--text3);}
+select.form-input{appearance:none;cursor:pointer;}
+textarea.form-input{resize:vertical;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+/* TOGGLE */
+.toggle-group{display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:3px;gap:3px;}
+.toggle-btn{flex:1;padding:8px;border-radius:6px;border:none;background:transparent;color:var(--text3);font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;}
+.toggle-btn.active{background:var(--accent);color:white;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:flex-end;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border-radius:20px 20px 0 0;padding:18px;width:100%;max-height:92vh;overflow-y:auto;border-top:1px solid var(--border);}
+.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 16px;}
+.modal h2{font-size:17px;font-weight:600;margin-bottom:16px;}
+
+/* SECTION TITLE */
+.sec{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin:14px 0 8px;}
+.sec:first-child{margin-top:0;}
+
+/* WEEK STRIP */
+.week-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:14px;}
+.wd{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+.wd-label{font-size:9px;color:var(--text3);font-weight:600;}
+.wd-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--text3);}
+.wd-num.today{background:var(--accent);color:white;}
+.wd-num.has-data{color:var(--accent2);}
+.wd-num.selected{background:var(--bg3);border:1px solid var(--accent);color:var(--accent2);}
+
+/* ALERT */
+.alert-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.alert-item:last-child{border-bottom:none;}
+.alert-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.alert-icon.warn{background:var(--yellow-bg);color:var(--yellow);}
+.alert-icon.danger{background:var(--red-bg);color:var(--red);}
+.alert-text strong{display:block;font-size:13px;font-weight:500;color:var(--text);}
+.alert-text span{font-size:11px;color:var(--text3);}
+
+/* CALENDAR */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.cal-nav h2{font-size:15px;font-weight:600;text-transform:capitalize;}
+.cal-nav-btn{width:30px;height:30px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.cal-label{text-align:center;font-size:10px;font-weight:600;color:var(--text3);padding:3px 0;}
+.cal-cell{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:7px;cursor:pointer;position:relative;transition:background .1s;}
+.cal-cell:active{background:var(--bg3);}
+.cal-cell .num{font-size:12px;font-weight:500;color:var(--text2);}
+.cal-cell.today .num{background:var(--accent);color:white;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.cal-cell.other-month .num{color:var(--text3);opacity:.35;}
+.cal-cell.weekend .num{color:var(--text3);}
+.cal-cell.selected{background:var(--accent-bg);}
+.cal-cell .dot{width:3px;height:3px;border-radius:50%;background:var(--accent2);position:absolute;bottom:2px;}
+.cal-day-panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-top:12px;}
+.cal-day-panel h3{font-size:14px;font-weight:600;margin-bottom:10px;}
+.cal-tabs{display:flex;gap:5px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;}
+.cal-tabs::-webkit-scrollbar{display:none;}
+.cal-tab{flex-shrink:0;padding:5px 11px;border-radius:20px;border:1px solid var(--border);color:var(--text3);font-size:11px;cursor:pointer;background:transparent;font-family:var(--font);transition:all .15s;}
+.cal-tab.active{border-color:var(--accent);color:var(--accent2);background:var(--accent-bg);}
+
+/* PROGRESS */
+.progress{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-top:5px;}
+.progress-fill{height:100%;border-radius:2px;background:var(--accent);}
+
+/* EMPTY */
+.empty{text-align:center;padding:36px 20px;color:var(--text3);}
+.empty i{font-size:36px;margin-bottom:10px;display:block;opacity:.35;}
+.empty p{font-size:13px;}
+
+/* TOAST */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:9px 16px;font-size:13px;color:var(--text);opacity:0;transition:all .3s;z-index:200;white-space:nowrap;pointer-events:none;}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* LOADING / AUTH */
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:300;}
+#loading .logo{font-size:48px;}
+#loading p{color:var(--text3);font-size:13px;}
+.spinner{width:22px;height:22px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+#authScreen{position:fixed;inset:0;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:250;padding:30px;}
+#authScreen.show{display:flex;}
+#authScreen .logo{font-size:56px;}
+#authScreen h2{font-size:22px;font-weight:600;text-align:center;}
+#authScreen p{font-size:14px;color:var(--text3);text-align:center;line-height:1.5;}
+.auth-btn{padding:14px 28px;border-radius:14px;border:none;font-family:var(--font);font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:10px;background:var(--accent);color:white;}
+.auth-btn-sec{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+
+/* MES GRISADO */
+.mes-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.mes-row:last-child{border-bottom:none;}
+.mes-row-label{color:var(--text2);font-size:13px;}
+.mes-row-value{font-size:13px;font-weight:500;}
+.mes-row-value.confirmed{color:var(--red);}
+.mes-row-value.estimated{color:var(--text3);font-style:italic;}
+.mes-row-value.income{color:var(--green);}
+.mes-edit-btn{width:24px;height:24px;border-radius:6px;background:var(--bg4);border:1px solid var(--border);color:var(--text3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;margin-left:8px;flex-shrink:0;}
+
+/* HAMBURGER */
+.hamburger-menu{display:none;position:fixed;inset:0;z-index:150;}
+.hamburger-menu.open{display:block;}
+.hamburger-overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);}
+.hamburger-panel{position:absolute;top:0;right:0;width:240px;height:100%;background:var(--bg2);border-left:1px solid var(--border);padding:50px 0 20px;display:flex;flex-direction:column;}
+.ham-item{display:flex;align-items:center;gap:12px;padding:13px 18px;color:var(--text2);font-size:14px;cursor:pointer;transition:background .1s;}
+.ham-item:hover{background:var(--bg3);}
+.ham-item i{font-size:19px;}
+.ham-divider{height:1px;background:var(--border);margin:6px 0;}
+
+/* STOCK ITEM */
+.stock-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.stock-item:last-child{border-bottom:none;}
+.stock-info{flex:1;}
+.stock-name{font-size:13px;font-weight:500;}
+.stock-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+.qty-ctrl{display:flex;align-items:center;gap:6px;}
+.qty-btn{width:26px;height:26px;border-radius:50%;background:var(--bg4);border:1px solid var(--border);color:var(--text2);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.qty-val{font-size:13px;font-weight:600;min-width:22px;text-align:center;}
+
+/* JC METRIC */
+.jc-metric{text-align:center;}
+.jc-metric-val{font-size:22px;font-weight:600;color:var(--accent2);}
+.jc-metric-label{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* ONIX */
+.odo{text-align:center;padding:14px;}
+.odo .km{font-size:30px;font-weight:600;}
+.odo .km-label{font-size:11px;color:var(--text3);margin-top:3px;}
+
+/* IMPORT ZONE */
+.import-zone{border:2px dashed var(--border2);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;transition:border-color .2s;}
+.import-zone:hover,.import-zone.drag{border-color:var(--accent);}
+.import-zone i{font-size:32px;color:var(--text3);margin-bottom:8px;display:block;}
+.import-zone p{font-size:13px;color:var(--text3);}
+.import-zone input{display:none;}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen">
+  <div class="logo">📊</div>
+  <h2>Mi App Personal</h2>
+  <p>Autenticá con tu huella para ingresar de forma segura</p>
+  <button class="auth-btn" onclick="authWithBiometric()">
+    <i class="ti ti-fingerprint"></i> Ingresar con huella
+  </button>
+  <button class="auth-btn auth-btn-sec" onclick="authWithPin()">
+    <i class="ti ti-password"></i> Usar PIN alternativo
+  </button>
+  <p style="font-size:11px;margin-top:10px;">Primera vez: se registrará tu huella automáticamente</p>
+</div>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="logo">📊</div>
+  <div class="spinner"></div>
+  <p id="loadingMsg">Cargando...</p>
+</div>
+
+<div id="app" style="display:none;">
+
+  <!-- HAMBURGER -->
+  <div class="hamburger-menu" id="hamburgerMenu">
+    <div class="hamburger-overlay" onclick="closeHamburger()"></div>
+    <div class="hamburger-panel">
+      <div class="ham-item" onclick="openImportModal()"><i class="ti ti-file-import"></i> Importar Excel</div>
+      <div class="ham-divider"></div>
+      <div class="ham-item" onclick="openExport()"><i class="ti ti-mail"></i> Exportar reporte</div>
+      <div class="ham-divider"></div>
+      <div class="ham-item" onclick="openConfig()"><i class="ti ti-settings"></i> Configuración</div>
+      <div class="ham-divider"></div>
+      <div class="ham-item" onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</div>
+    </div>
+  </div>
+
+  <!-- TOP NAV -->
+  <div class="top-nav">
+    <div class="top-nav-inner">
+      <button class="tnav-btn active" onclick="navigate('inicio')">Inicio</button>
+      <button class="tnav-btn" onclick="navigate('movimientos')">Movimientos</button>
+      <button class="tnav-btn" onclick="navigate('calendario')">Calendario</button>
+      <button class="tnav-btn" onclick="navigate('mes')">MES</button>
+      <button class="tnav-btn" onclick="navigate('alacena')">Alacena</button>
+      <button class="tnav-btn" onclick="navigate('onix')">ONIX</button>
+      <button class="tnav-btn" onclick="navigate('notas')">Notas</button>
+      <button class="tnav-btn" onclick="navigate('jc')">JC</button>
+    </div>
+    <div class="tnav-menu" onclick="openHamburger()"><i class="ti ti-menu-2"></i></div>
+  </div>
+
+  <!-- ===== INICIO ===== -->
+  <div class="screen active" id="screen-inicio">
+    <div class="header">
+      <h1 id="inicio-greeting">Buen día</h1>
+      <p id="inicio-date"></p>
+    </div>
+    <div class="screen-body">
+      <div class="week-strip" id="weekStrip"></div>
+      <div id="dayPendingPanel" style="display:none;" class="card" id="dayPendingCard">
+        <div class="card-title" id="dayPendingTitle">Pendientes</div>
+        <div id="dayPendingContent"></div>
+      </div>
+      <div class="sec">Notas recientes</div>
+      <div class="card" id="notasRecCard">
+        <div class="empty"><i class="ti ti-note-off"></i><p>Sin notas aún</p></div>
+      </div>
+      <div class="sec">Alertas — próximos 14 días</div>
+      <div class="card" id="alertasCard">
+        <div class="empty"><i class="ti ti-bell-off"></i><p>Sin vencimientos próximos</p></div>
+      </div>
+      <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="openModal('modalRec')">
+        <i class="ti ti-bell-plus"></i> Agregar recordatorio
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== MOVIMIENTOS ===== -->
+  <div class="screen" id="screen-movimientos">
+    <div class="header">
+      <h1>Movimientos</h1>
+      <p id="mov-periodo"></p>
+    </div>
+    <div class="screen-body">
+      <div class="week-strip" id="weekStripMov"></div>
+      <div class="pills" id="movMedioPills">
+        <button class="pill active" onclick="filterMov('')">Todos</button>
+        <button class="pill" onclick="filterMov('Efectivo')">Efectivo</button>
+        <button class="pill" onclick="filterMov('Débito Santander')">Débito S.</button>
+        <button class="pill" onclick="filterMov('Visa Santander')">Visa S.</button>
+        <button class="pill" onclick="filterMov('Amex Santander')">Amex</button>
+        <button class="pill" onclick="filterMov('Visa Hipotecario')">Visa H.</button>
+        <button class="pill" onclick="filterMov('MC Hipotecario')">MC H.</button>
+        <button class="pill" onclick="filterMov('MC Mercadopago')">MC MP</button>
+      </div>
+      <div id="movList"></div>
+    </div>
+    <button class="btn-fab" onclick="openModal('modalMov')"><i class="ti ti-plus"></i></button>
+  </div>
+
+  <!-- ===== CALENDARIO ===== -->
+  <div class="screen" id="screen-calendario">
+    <div class="header"><h1>Calendario</h1></div>
+    <div class="screen-body">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="calPrev()"><i class="ti ti-chevron-left"></i></button>
+        <h2 id="calTitle"></h2>
+        <button class="cal-nav-btn" onclick="calNext()"><i class="ti ti-chevron-right"></i></button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-day-panel" id="calDayPanel" style="display:none;">
+        <h3 id="calDayTitle"></h3>
+        <div class="cal-tabs">
+          <button class="cal-tab active" onclick="calTab(this,'notas')">📝 Notas</button>
+          <button class="cal-tab" onclick="calTab(this,'horas')">⏱ Horas</button>
+          <button class="cal-tab" onclick="calTab(this,'domestica')">🏠 Doméstica</button>
+          <button class="cal-tab" onclick="calTab(this,'actividad')">⚽ Actividad</button>
+          <button class="cal-tab" onclick="calTab(this,'personal')">🔒 Personal</button>
+          <button class="cal-tab" onclick="calTab(this,'km')">🚗 Km</button>
+        </div>
+        <div id="calTabContent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MES ===== -->
+  <div class="screen" id="screen-mes">
+    <div class="header" style="display:flex;align-items:center;justify-content:space-between;flex-direction:row;padding:10px 14px;">
+      <h1 id="mes-title" style="font-size:17px;">MES</h1>
+      <div style="display:flex;gap:6px;">
+        <button class="cal-nav-btn" onclick="mesPrev()"><i class="ti ti-chevron-left"></i></button>
+        <button class="cal-nav-btn" onclick="mesNext()"><i class="ti ti-chevron-right"></i></button>
+      </div>
+    </div>
+    <div class="screen-body">
+      <div class="pills">
+        <button class="pill active" onclick="mesTab(this,'resumen')">Resumen</button>
+        <button class="pill" onclick="mesTab(this,'estadisticas')">Estadísticas</button>
+      </div>
+      <div id="mesContent"></div>
+    </div>
+  </div>
+
+  <!-- ===== ALACENA ===== -->
+  <div class="screen" id="screen-alacena">
+    <div class="header"><h1>Alacena</h1></div>
+    <div class="screen-body">
+      <div class="pills">
+        <button class="pill active" onclick="alaTab(this,'stock')">Stock</button>
+        <button class="pill" onclick="alaTab(this,'control')">Control stock</button>
+        <button class="pill" onclick="alaTab(this,'precios')">Precios</button>
+        <button class="pill" onclick="alaTab(this,'lista')">Lista compras</button>
+      </div>
+      <div id="alaContent"></div>
+    </div>
+    <button class="btn-fab" onclick="openModal('modalAla')"><i class="ti ti-plus"></i></button>
+  </div>
+
+  <!-- ===== ONIX ===== -->
+  <div class="screen" id="screen-onix">
+    <div class="header"><h1>ONIX</h1></div>
+    <div class="screen-body">
+      <div class="pills">
+        <button class="pill active" onclick="onixTab(this,'resumen')">Resumen</button>
+        <button class="pill" onclick="onixTab(this,'cargas')">Cargas</button>
+        <button class="pill" onclick="onixTab(this,'gastos')">Gastos</button>
+      </div>
+      <div id="onixContent"></div>
+    </div>
+    <button class="btn-fab" onclick="openModal('modalOnix')"><i class="ti ti-plus"></i></button>
+  </div>
+
+  <!-- ===== NOTAS ===== -->
+  <div class="screen" id="screen-notas">
+    <div class="header"><h1>Notas</h1></div>
+    <div class="screen-body">
+      <div class="pills" id="notaTagPills">
+        <button class="pill active" onclick="filterNotas('')">Todas</button>
+      </div>
+      <div id="notasList"></div>
+    </div>
+    <button class="btn-fab" onclick="openModal('modalNota')"><i class="ti ti-plus"></i></button>
+  </div>
+
+  <!-- ===== JC ===== -->
+  <div class="screen" id="screen-jc">
+    <div class="header">
+      <h1>Juan Cruz 🍼</h1>
+      <p id="jcAge"></p>
+    </div>
+    <div class="screen-body">
+      <div class="pills">
+        <button class="pill active" onclick="jcTab(this,'crecimiento')">Crecimiento</button>
+        <button class="pill" onclick="jcTab(this,'diario')">Diario</button>
+      </div>
+      <div id="jcContent"></div>
+    </div>
+    <button class="btn-fab" onclick="openModal('modalJC')"><i class="ti ti-plus"></i></button>
+  </div>
+
+</div><!-- /app -->
+
+<!-- ===== MODALS ===== -->
+
+<!-- Movimiento -->
+<div class="modal-overlay" id="modalMov">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Nuevo movimiento</h2>
+    <div class="form-group">
+      <div class="toggle-group">
+        <button class="toggle-btn active" id="tbSalida" onclick="setMovTipo('Salida')">↑ Salida</button>
+        <button class="toggle-btn" id="tbEntrada" onclick="setMovTipo('Entrada')">↓ Entrada</button>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Monto</label>
+        <input class="form-input" type="number" id="mMonto" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cuotas</label>
+        <input class="form-input" type="number" id="mCuotas" value="1" min="1">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Medio de pago</label>
+      <select class="form-input" id="mMedio">
+        <option>Efectivo</option>
+        <option>Débito Santander</option>
+        <option>Visa Santander</option>
+        <option>Amex Santander</option>
+        <option>Visa Hipotecario</option>
+        <option>MC Hipotecario</option>
+        <option>MC Mercadopago</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categoría</label>
+      <select class="form-input" id="mCategoria"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Detalle</label>
+      <input class="form-input" type="text" id="mDetalle" placeholder="Descripción">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" type="date" id="mFecha">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveMov()">Guardar</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeModal('modalMov')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Nota -->
+<div class="modal-overlay" id="modalNota">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Nueva nota</h2>
+    <div class="form-group">
+      <label class="form-label">Etiqueta (opcional)</label>
+      <input class="form-input" type="text" id="nTag" placeholder="Agua, Médico, Casa...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nota</label>
+      <textarea class="form-input" id="nTexto" rows="4" placeholder="Escribí tu nota..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" type="date" id="nFecha">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveNota()">Guardar</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeModal('modalNota')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Alacena -->
+<div class="modal-overlay" id="modalAla">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Producto</h2>
+    <div class="form-group">
+      <label class="form-label">Nombre</label>
+      <input class="form-input" type="text" id="aNombre" placeholder="Leche La Serenísima">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Stock</label>
+        <input class="form-input" type="number" id="aStock" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Unidad</label>
+        <input class="form-input" type="text" id="aUnidad" placeholder="litro, kg, u">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categoría</label>
+      <input class="form-input" type="text" id="aCategoria" placeholder="Lácteos, Limpieza...">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Precio unitario</label>
+        <input class="form-input" type="number" id="aPrecio" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lugar</label>
+        <input class="form-input" type="text" id="aLugar" placeholder="Coto, Jumbo...">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Vencimiento</label>
+        <input class="form-input" type="date" id="aVto">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha compra</label>
+        <input class="form-input" type="date" id="aFecha">
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveAla()">Guardar</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeModal('modalAla')">Cancelar</button>
+  </div>
+</div>
+
+<!-- ONIX -->
+<div class="modal-overlay" id="modalOnix">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Registrar en ONIX</h2>
+    <div class="form-group">
+      <div class="toggle-group">
+        <button class="toggle-btn active" id="otCarga" onclick="setOnixTipo('carga')">⛽ Carga</button>
+        <button class="toggle-btn" id="otGasto" onclick="setOnixTipo('gasto')">🔧 Gasto</button>
+        <button class="toggle-btn" id="otKm" onclick="setOnixTipo('km')">📍 KM</button>
+      </div>
+    </div>
+    <div id="onixFormFields">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Litros</label><input class="form-input" type="number" id="oLitros" placeholder="0"></div>
+        <div class="form-group"><label class="form-label">Precio/litro</label><input class="form-input" type="number" id="oPrecioL" placeholder="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">KM anterior</label><input class="form-input" type="number" id="oKmAnt" placeholder="0"></div>
+        <div class="form-group"><label class="form-label">KM actual</label><input class="form-input" type="number" id="oKmAct" placeholder="0"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Lugar</label><input class="form-input" type="text" id="oLugar" placeholder="YPF, Shell..."></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" type="date" id="oFecha">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveOnix()">Guardar</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeModal('modalOnix')">Cancelar</button>
+  </div>
+</div>
+
+<!-- JC -->
+<div class="modal-overlay" id="modalJC">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Juan Cruz</h2>
+    <div class="form-group">
+      <div class="toggle-group">
+        <button class="toggle-btn active" id="jtMed" onclick="setJCTipo('medicion')">📏 Medición</button>
+        <button class="toggle-btn" id="jtDia" onclick="setJCTipo('diario')">📓 Diario</button>
+      </div>
+    </div>
+    <div id="jcFormFields">
+      <div class="form-row-3">
+        <div class="form-group"><label class="form-label">Peso kg</label><input class="form-input" type="number" id="jPeso" step="0.1" placeholder="0.0"></div>
+        <div class="form-group"><label class="form-label">Talla cm</label><input class="form-input" type="number" id="jTalla" step="0.1" placeholder="0"></div>
+        <div class="form-group"><label class="form-label">P.Cef cm</label><input class="form-input" type="number" id="jPCef" step="0.1" placeholder="0"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" type="date" id="jFecha">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveJC()">Guardar</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeModal('modalJC')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Recordatorio -->
+<div class="modal-overlay" id="modalRec">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Nuevo recordatorio</h2>
+    <div class="form-group">
+      <label class="form-label">Descripción</label>
+      <input class="form-input" type="text" id="rDesc" placeholder="Vence seguro auto...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" type="date" id="rFecha">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveRec()">Guardar</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeModal('modalRec')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Import -->
+<div class="modal-overlay" id="modalImport">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Importar Excel</h2>
+    <p style="font-size:13px;color:var(--text3);margin-bottom:16px;line-height:1.5;">Importá tus archivos Excel. Columnas requeridas según el tipo.</p>
+    <div class="sec">Movimientos 2026</div>
+    <div class="import-zone" onclick="document.getElementById('fileMovs').click()">
+      <i class="ti ti-file-spreadsheet"></i>
+      <p id="fileMovsLabel">Medio, Salida, Entrada, Fecha, Mes, Año, Detalle, Categoria</p>
+      <input type="file" id="fileMovs" accept=".xlsx,.xls,.csv" onchange="handleImport(this,'movimientos')">
+    </div>
+    <div class="sec" style="margin-top:14px;">Alacena / Precios</div>
+    <div class="import-zone" onclick="document.getElementById('fileAla').click()">
+      <i class="ti ti-file-spreadsheet"></i>
+      <p id="fileAlaLabel">Producto, Precio unitario, Lugar, Fecha, Cantidad, Unidad</p>
+      <input type="file" id="fileAla" accept=".xlsx,.xls,.csv" onchange="handleImport(this,'alacena')">
+    </div>
+    <div class="sec" style="margin-top:14px;">Horas</div>
+    <div class="import-zone" onclick="document.getElementById('fileHoras').click()">
+      <i class="ti ti-file-spreadsheet"></i>
+      <p id="fileHorasLabel">Fecha, Tipo, Entrada, Salida</p>
+      <input type="file" id="fileHoras" accept=".xlsx,.xls,.csv" onchange="handleImport(this,'horas')">
+    </div>
+    <button class="btn btn-secondary btn-full" style="margin-top:16px;" onclick="closeModal('modalImport')">Cerrar</button>
+  </div>
+</div>
+
+<!-- MES editar valor -->
+<div class="modal-overlay" id="modalMesEdit">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 id="mesEditTitle">Actualizar valor</h2>
+    <div class="form-group">
+      <label class="form-label">Monto</label>
+      <input class="form-input" type="number" id="mesEditVal" placeholder="0">
+    </div>
+    <input type="hidden" id="mesEditKey">
+    <button class="btn btn-primary btn-full" onclick="saveMesEdit()">Confirmar</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeModal('modalMesEdit')">Cancelar</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SB_URL='https://tmzucfybqtklmlkgpexz.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtenVjZnlicXRrbG1sa2dwZXh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NTY3OTMsImV4cCI6MjA5NjUzMjc5M30.Dm_t03iagSwPVjnCmeUO__b9whIlArvDjSt43RAeU2k';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+// STATE
+let movimientos=[],notas=[],alacena=[],onixData=[],jcData=[],recordatorios=[],horas=[],mesOverrides={};
+let categorias=['Comida','Farmacia','JC','Limpieza','Varios','Vehículo','Doméstica','Servicios','Salud','Ropa','Educación','Combustible'];
+let movTipo='Salida',onixTipo='carga',jcTipo='medicion';
+let calYear,calMonth,calSelectedDay,mesYear,mesMonth,movFiltroMedio='';
+let selectedWeekDay=null;
+const JC_BIRTH=new Date('2026-03-13');
+
+// ===== AUTH =====
+async function checkAuth(){
+  const authed=sessionStorage.getItem('authed');
+  if(authed){startApp();return;}
+  const hasCredential=localStorage.getItem('webauthn_registered');
+  if(!hasCredential){
+    // First time — register
+    await registerBiometric();
+  } else {
+    document.getElementById('loading').style.display='none';
+    document.getElementById('authScreen').classList.add('show');
+  }
+}
+
+async function registerBiometric(){
+  setLoading('Registrando huella...');
+  try {
+    if(!window.PublicKeyCredential){throw new Error('No soportado');}
+    const challenge=new Uint8Array(32);crypto.getRandomValues(challenge);
+    const cred=await navigator.credentials.create({publicKey:{
+      challenge,rp:{name:'Mi App Personal'},
+      user:{id:new Uint8Array(16),name:'usuario',displayName:'Usuario'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{userVerification:'required'},
+      timeout:60000
+    }});
+    localStorage.setItem('webauthn_registered','1');
+    localStorage.setItem('webauthn_id',btoa(String.fromCharCode(...new Uint8Array(cred.rawId))));
+    sessionStorage.setItem('authed','1');
+    startApp();
+  } catch(e){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('authScreen').classList.add('show');
+    showToast('Registrá tu huella para continuar');
+  }
+}
+
+async function authWithBiometric(){
+  setLoading('Verificando huella...');
+  document.getElementById('authScreen').classList.remove('show');
+  try {
+    if(!window.PublicKeyCredential){throw new Error('No soportado');}
+    const challenge=new Uint8Array(32);crypto.getRandomValues(challenge);
+    const credIdStr=localStorage.getItem('webauthn_id');
+    const credId=credIdStr?Uint8Array.from(atob(credIdStr),c=>c.charCodeAt(0)):null;
+    const opts={publicKey:{challenge,timeout:60000,userVerification:'required',
+      rpId:window.location.hostname||'localhost'}};
+    if(credId)opts.publicKey.allowCredentials=[{type:'public-key',id:credId}];
+    await navigator.credentials.get(opts);
+    sessionStorage.setItem('authed','1');
+    startApp();
+  } catch(e){
+    document.getElementById('loading').style.display='none';
+    document.getElementById('authScreen').classList.add('show');
+    showToast('Autenticación fallida. Intentá de nuevo.');
+  }
+}
+
+function authWithPin(){
+  const pin=prompt('Ingresá tu PIN (4 dígitos):');
+  const savedPin=localStorage.getItem('app_pin');
+  if(!savedPin){
+    if(pin&&pin.length===4&&/^\d+$/.test(pin)){
+      localStorage.setItem('app_pin',pin);
+      sessionStorage.setItem('authed','1');
+      startApp();
+    } else {showToast('PIN inválido. Usá 4 dígitos numéricos.');}
+  } else {
+    if(pin===savedPin){sessionStorage.setItem('authed','1');startApp();}
+    else showToast('PIN incorrecto');
+  }
+}
+
+function logout(){
+  closeHamburger();
+  sessionStorage.removeItem('authed');
+  document.getElementById('app').style.display='none';
+  document.getElementById('authScreen').classList.add('show');
+}
+
+function setLoading(msg){
+  document.getElementById('loading').style.display='flex';
+  document.getElementById('loadingMsg').textContent=msg||'Cargando...';
+}
+
+async function startApp(){
+  setLoading('Cargando datos...');
+  const now=new Date();
+  calYear=now.getFullYear();calMonth=now.getMonth();
+  mesYear=now.getFullYear();mesMonth=now.getMonth();
+  setDefaultDates();
+  await loadAll();
+  document.getElementById('loading').style.display='none';
+  document.getElementById('app').style.display='flex';
+  renderInicio();
+}
+
+function setDefaultDates(){
+  const today=new Date().toISOString().split('T')[0];
+  ['mFecha','nFecha','aFecha','oFecha','jFecha','rFecha'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.value=today;
+  });
+}
+
+async function loadAll(){
+  try{
+    const[m,n,a,o,j,r,h]=await Promise.all([
+      sb.from('movimientos').select('*').order('fecha',{ascending:false}),
+      sb.from('notas').select('*').order('fecha',{ascending:false}),
+      sb.from('alacena').select('*').order('nombre'),
+      sb.from('vehiculo').select('*').order('fecha',{ascending:false}),
+      sb.from('jc').select('*').order('fecha',{ascending:false}),
+      sb.from('recordatorios').select('*').order('fecha'),
+      sb.from('horas').select('*').order('fecha',{ascending:false})
+    ]);
+    movimientos=m.data||[];notas=n.data||[];alacena=a.data||[];
+    onixData=o.data||[];jcData=j.data||[];recordatorios=r.data||[];horas=h.data||[];
+    const cats=[...new Set(movimientos.map(x=>x.categoria).filter(Boolean))];
+    cats.forEach(c=>{if(!categorias.includes(c))categorias.push(c);});
+    renderCatSelect();
+    // Load mes overrides
+    const savedOverrides=localStorage.getItem('mes_overrides');
+    if(savedOverrides)mesOverrides=JSON.parse(savedOverrides);
+  }catch(e){console.error(e);}
+}
+
+// ===== NAV =====
+function navigate(s){
+  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tnav-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('screen-'+s).classList.add('active');
+  document.querySelectorAll('.tnav-btn').forEach(b=>{
+    if(b.getAttribute('onclick')?.includes("'"+s+"'"))b.classList.add('active');
+  });
+  if(s==='inicio')renderInicio();
+  if(s==='movimientos'){renderWeekStrip('weekStripMov',true);renderMovimientos();}
+  if(s==='calendario')renderCalendar();
+  if(s==='mes')renderMes();
+  if(s==='alacena')renderAla('stock');
+  if(s==='onix')renderOnix('resumen');
+  if(s==='notas')renderNotas('');
+  if(s==='jc')renderJC('crecimiento');
+}
+
+// ===== HAMBURGER =====
+function openHamburger(){document.getElementById('hamburgerMenu').classList.add('open');}
+function closeHamburger(){document.getElementById('hamburgerMenu').classList.remove('open');}
+function openImportModal(){closeHamburger();openModal('modalImport');}
+function openExport(){closeHamburger();showToast('Exportar: próximamente');}
+function openConfig(){closeHamburger();showToast('Configuración: próximamente');}
+
+// ===== MODALS =====
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ===== TOAST =====
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ===== UTILS =====
+function fmt(n){return Number(n||0).toLocaleString('es-AR');}
+function fd(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
+function toISO(d){const p=d.split('/');return p.length===3?`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`:d;}
+
+// ===== WEEK STRIP =====
+function renderWeekStrip(containerId,clickable){
+  const now=new Date();
+  const strip=document.getElementById(containerId);
+  const labels=['L','M','X','J','V','S','D'];
+  const dow=now.getDay()===0?6:now.getDay()-1;
+  const weekStart=new Date(now);weekStart.setDate(now.getDate()-dow);
+  strip.innerHTML=labels.map((l,i)=>{
+    const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);
+    const iso=d.toISOString().split('T')[0];
+    const isToday=d.toDateString()===now.toDateString();
+    const hasMov=movimientos.some(m=>m.fecha===iso);
+    const isSel=selectedWeekDay===iso;
+    const cls=`wd-num ${isToday?'today':''} ${hasMov&&!isToday?'has-data':''} ${isSel&&!isToday?'selected':''}`;
+    const click=clickable?`onclick="selectWeekDay('${iso}')"`:`onclick="selectInicioDay('${iso}')"`;
+    return`<div class="wd" ${click}>
+      <span class="wd-label">${l}</span>
+      <span class="${cls}">${d.getDate()}</span>
+    </div>`;
+  }).join('');
+}
+
+// ===== INICIO =====
+function renderInicio(){
+  const now=new Date();
+  const h=now.getHours();
+  const greet=h<12?'Buen día':h<18?'Buenas tardes':'Buenas noches';
+  const months=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const days=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  document.getElementById('inicio-greeting').textContent=greet;
+  document.getElementById('inicio-date').textContent=`${days[now.getDay()]} ${now.getDate()} de ${months[now.getMonth()]}`;
+  renderWeekStrip('weekStrip',false);
+  renderNotasRec();
+  renderAlertas();
+}
+
+function selectInicioDay(iso){
+  selectedWeekDay=iso;
+  renderWeekStrip('weekStrip',false);
+  const from=new Date(iso);
+  const to=new Date(iso);to.setDate(to.getDate()+14);
+  const pending=recordatorios.filter(r=>{
+    const f=new Date(r.fecha);return f>=from&&f<=to&&!r.done;
+  });
+  const panel=document.getElementById('dayPendingPanel');
+  const title=document.getElementById('dayPendingTitle');
+  const content=document.getElementById('dayPendingContent');
+  title.textContent=`Pendientes desde ${fd(iso)}`;
+  if(pending.length===0){
+    content.innerHTML='<div style="color:var(--text3);font-size:13px;padding:4px 0;">Sin pendientes en los próximos 14 días</div>';
+  } else {
+    content.innerHTML=pending.map(p=>{
+      const diff=Math.ceil((new Date(p.fecha)-from)/86400000);
+      return`<div class="alert-item">
+        <div class="alert-icon ${diff<=3?'danger':'warn'}"><i class="ti ti-bell"></i></div>
+        <div class="alert-text"><strong>${p.descripcion}</strong><span>${diff===0?'Hoy':diff===1?'Mañana':'En '+diff+' días'} · ${fd(p.fecha)}</span></div>
+      </div>`;
+    }).join('');
+  }
+  panel.style.display='block';
+}
+
+function renderNotasRec(){
+  const card=document.getElementById('notasRecCard');
+  const rec=notas.slice(0,3);
+  card.innerHTML=rec.length===0?
+    '<div class="empty"><i class="ti ti-note-off"></i><p>Sin notas aún</p></div>':
+    rec.map(n=>`<div class="row">
+      <div><div class="row-label">${n.texto.substring(0,50)}${n.texto.length>50?'...':''}</div>
+      <div class="row-sub">${n.tag?'#'+n.tag+' · ':''}${fd(n.fecha)}</div></div>
+    </div>`).join('');
+}
+
+function renderAlertas(){
+  const now=new Date();
+  const in14=new Date(now);in14.setDate(now.getDate()+14);
+  const al=recordatorios.filter(r=>{const f=new Date(r.fecha);return f>=now&&f<=in14&&!r.done;});
+  const card=document.getElementById('alertasCard');
+  card.innerHTML=al.length===0?
+    '<div class="empty"><i class="ti ti-bell-off"></i><p>Sin vencimientos próximos</p></div>':
+    al.map(a=>{
+      const d=Math.ceil((new Date(a.fecha)-now)/86400000);
+      return`<div class="alert-item">
+        <div class="alert-icon ${d<=3?'danger':'warn'}"><i class="ti ti-bell"></i></div>
+        <div class="alert-text"><strong>${a.descripcion}</strong>
+        <span>${d===0?'Hoy':d===1?'Mañana':'En '+d+' días'} · ${fd(a.fecha)}</span></div>
+      </div>`;
+    }).join('');
+}
+
+async function saveRec(){
+  const desc=document.getElementById('rDesc').value;
+  const fecha=document.getElementById('rFecha').value;
+  if(!desc.trim())return showToast('Ingresá una descripción');
+  const{error}=await sb.from('recordatorios').insert({descripcion:desc,fecha,done:false});
+  if(error)return showToast('Error al guardar');
+  recordatorios.push({descripcion:desc,fecha,done:false});
+  closeModal('modalRec');
+  document.getElementById('rDesc').value='';
+  showToast('Recordatorio guardado ✓');
+  renderAlertas();
+}
+
+// ===== MOVIMIENTOS =====
+function renderCatSelect(){
+  const sel=document.getElementById('mCategoria');
+  if(!sel)return;
+  sel.innerHTML=categorias.map(c=>`<option value="${c}">${c}</option>`).join('')+
+    `<option value="__nueva__">+ Nueva categoría...</option>`;
+  sel.onchange=function(){
+    if(this.value==='__nueva__'){
+      const n=prompt('Nueva categoría:');
+      if(n&&n.trim()){categorias.push(n.trim());renderCatSelect();sel.value=n.trim();}
+      else sel.value=categorias[0];
+    }
+  };
+}
+
+function setMovTipo(t){
+  movTipo=t;
+  document.getElementById('tbSalida').classList.toggle('active',t==='Salida');
+  document.getElementById('tbEntrada').classList.toggle('active',t==='Entrada');
+}
+
+function filterMov(medio){
+  movFiltroMedio=medio;
+  document.querySelectorAll('#movMedioPills .pill').forEach(p=>{
+    const oc=p.getAttribute('onclick')||'';
+    p.classList.toggle('active',oc.includes("'"+medio+"'"));
+  });
+  renderMovimientos();
+}
+
+function selectWeekDay(iso){
+  selectedWeekDay=iso;
+  renderWeekStrip('weekStripMov',true);
+  renderMovimientos();
+}
+
+function renderMovimientos(){
+  const now=new Date();
+  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('mov-periodo').textContent=`${months[now.getMonth()]} ${now.getFullYear()}`;
+  let list=movimientos;
+  if(movFiltroMedio)list=list.filter(m=>m.medio===movFiltroMedio);
+  if(selectedWeekDay)list=list.filter(m=>m.fecha===selectedWeekDay);
+  const el=document.getElementById('movList');
+  if(list.length===0){
+    el.innerHTML='<div class="empty"><i class="ti ti-receipt-off"></i><p>Sin movimientos</p></div>';return;
+  }
+  el.innerHTML=`<div class="card">${list.slice(0,60).map(m=>`
+    <div class="row">
+      <div>
+        <div class="row-label">${m.detalle||m.categoria}</div>
+        <div class="row-sub">${m.categoria} · ${m.medio} · ${fd(m.fecha)}${m.cuotas>1?' · '+m.cuotas+' cuotas':''}</div>
+      </div>
+      <span class="row-value ${m.tipo==='Entrada'?'pos':'neg'}">${m.tipo==='Entrada'?'+':'-'}$${fmt(m.monto)}</span>
+    </div>`).join('')}</div>`;
+}
+
+async function saveMov(){
+  const monto=parseFloat(document.getElementById('mMonto').value);
+  if(!monto)return showToast('Ingresá un monto');
+  const data={tipo:movTipo,monto,medio:document.getElementById('mMedio').value,
+    categoria:document.getElementById('mCategoria').value,
+    detalle:document.getElementById('mDetalle').value,
+    cuotas:parseInt(document.getElementById('mCuotas').value)||1,
+    fecha:document.getElementById('mFecha').value};
+  const{data:ins,error}=await sb.from('movimientos').insert(data).select();
+  if(error)return showToast('Error al guardar');
+  movimientos.unshift(ins[0]);
+  closeModal('modalMov');
+  document.getElementById('mMonto').value='';
+  document.getElementById('mDetalle').value='';
+  showToast('Movimiento guardado ✓');
+  renderMovimientos();
+}
+
+// ===== CALENDARIO =====
+function renderCalendar(){
+  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('calTitle').textContent=`${months[calMonth]} ${calYear}`;
+  const grid=document.getElementById('calGrid');
+  const labels=['L','M','X','J','V','S','D'];
+  let html=labels.map(l=>`<div class="cal-label">${l}</div>`).join('');
+  const first=new Date(calYear,calMonth,1);
+  const startDow=first.getDay()===0?6:first.getDay()-1;
+  const dim=new Date(calYear,calMonth+1,0).getDate();
+  const prev=new Date(calYear,calMonth,0).getDate();
+  const today=new Date();
+  for(let i=0;i<startDow;i++)html+=`<div class="cal-cell other-month"><span class="num">${prev-startDow+i+1}</span></div>`;
+  for(let d=1;d<=dim;d++){
+    const iso=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=d===today.getDate()&&calMonth===today.getMonth()&&calYear===today.getFullYear();
+    const isWeekend=[5,6].includes((startDow+d-1)%7);
+    const hasNote=notas.some(n=>n.fecha===iso);
+    const isSel=calSelectedDay===d&&calMonth===today.getMonth();
+    html+=`<div class="cal-cell ${isToday?'today':''} ${isWeekend?'weekend':''} ${isSel?'selected':''}" onclick="selectCalDay(${d})">
+      <span class="num">${d}</span>${hasNote?'<span class="dot"></span>':''}
+    </div>`;
+  }
+  grid.innerHTML=html;
+}
+
+function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
+
+function selectCalDay(d){
+  calSelectedDay=d;
+  renderCalendar();
+  const months=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  document.getElementById('calDayTitle').textContent=`${d} de ${months[calMonth]}`;
+  document.getElementById('calDayPanel').style.display='block';
+  calTab(document.querySelector('.cal-tab.active||.cal-tab'),  'notas');
+  setTimeout(()=>document.getElementById('calDayPanel').scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+}
+
+function calTab(btn,tab){
+  document.querySelectorAll('.cal-tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  const iso=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(calSelectedDay).padStart(2,'0')}`;
+  const c=document.getElementById('calTabContent');
+  if(tab==='notas'){
+    const dn=notas.filter(n=>n.fecha===iso);
+    c.innerHTML=`
+      <textarea class="form-input" id="calNotaInput" rows="3" placeholder="Nota para este día..."></textarea>
+      <input class="form-input" style="margin-top:8px;" type="text" id="calNotaTag" placeholder="Etiqueta: Agua, Médico...">
+      <button class="btn btn-primary btn-full" style="margin-top:8px;" onclick="saveCalNota('${iso}')">Guardar nota</button>
+      ${dn.length?`<div style="margin-top:12px;">${dn.map(n=>`<div class="card" style="margin-bottom:6px;">
+        ${n.tag?`<span class="tag tag-purple" style="margin-bottom:6px;display:inline-block;">#${n.tag}</span><br>`:''}
+        <span style="font-size:13px;color:var(--text2);">${n.texto}</span></div>`).join('')}</div>`:''}`;
+  } else if(tab==='horas'){
+    const hr=horas.find(h=>h.fecha===iso)||{tipo:'Presencial',entrada:'08:00',salida:'17:00'};
+    c.innerHTML=`
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Entrada</label><input class="form-input" type="time" id="hEntrada" value="${hr.entrada||'08:00'}"></div>
+        <div class="form-group"><label class="form-label">Salida</label><input class="form-input" type="time" id="hSalida" value="${hr.salida||'17:00'}"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Tipo</label>
+        <select class="form-input" id="hTipo">
+          ${['Presencial','Home Office','Nestlé Virtual','Nestlé Day','Vacaciones','Feriado'].map(t=>`<option ${hr.tipo===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="saveHoras('${iso}')">Guardar</button>`;
+  } else if(tab==='domestica'){
+    c.innerHTML=`
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Entrada</label><input class="form-input" type="time" id="dEnt"></div>
+        <div class="form-group"><label class="form-label">Salida</label><input class="form-input" type="time" id="dSal"></div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="saveDom('${iso}')">Guardar</button>`;
+  } else if(tab==='actividad'){
+    c.innerHTML=`
+      <div class="form-group"><label class="form-label">Actividad</label>
+        <select class="form-input" id="actTipo"><option>Correr</option><option>Pádel</option><option>Gym</option><option>Otra</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Detalle</label><input class="form-input" type="text" id="actDet" placeholder="5km, 1 hora..."></div>
+      <button class="btn btn-primary btn-full" onclick="saveAct('${iso}')">Guardar</button>`;
+  } else if(tab==='personal'){
+    c.innerHTML=`
+      <div class="form-group"><label class="form-label">Registrar</label>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="psP" onclick="psToggle('P')">P</button>
+          <button class="toggle-btn" id="psS" onclick="psToggle('S')">S</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="savePS('${iso}')">Guardar</button>`;
+  } else if(tab==='km'){
+    c.innerHTML=`
+      <div class="form-group"><label class="form-label">KM al cierre</label>
+        <input class="form-input" type="number" id="kmVal" placeholder="KM actual">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="saveKm('${iso}')">Guardar</button>`;
+  }
+}
+
+function psToggle(v){
+  document.getElementById('psP').classList.toggle('active',v==='P');
+  document.getElementById('psS').classList.toggle('active',v==='S');
+}
+
+async function saveCalNota(fecha){
+  const texto=document.getElementById('calNotaInput').value;
+  const tag=document.getElementById('calNotaTag').value;
+  if(!texto.trim())return showToast('Escribí algo primero');
+  const{error}=await sb.from('notas').insert({texto,tag,fecha});
+  if(error)return showToast('Error');
+  notas.unshift({texto,tag,fecha,id:Date.now()});
+  showToast('Nota guardada ✓');
+  calTab(null,'notas');
+}
+
+async function saveHoras(fecha){
+  const tipo=document.getElementById('hTipo').value;
+  const entrada=document.getElementById('hEntrada').value;
+  const salida=document.getElementById('hSalida').value;
+  const existing=horas.find(h=>h.fecha===fecha);
+  if(existing){
+    await sb.from('horas').update({tipo,entrada,salida}).eq('id',existing.id);
+    existing.tipo=tipo;existing.entrada=entrada;existing.salida=salida;
+  } else {
+    const{data:ins}=await sb.from('horas').insert({fecha,tipo,entrada,salida}).select();
+    if(ins)horas.unshift(ins[0]);
+  }
+  showToast('Horas guardadas ✓');
+}
+
+async function saveDom(fecha){
+  const ent=document.getElementById('dEnt').value;
+  const sal=document.getElementById('dSal').value;
+  await sb.from('notas').insert({texto:`Doméstica: ${ent} - ${sal}`,tag:'Doméstica',fecha});
+  notas.unshift({texto:`Doméstica: ${ent} - ${sal}`,tag:'Doméstica',fecha});
+  showToast('Registrado ✓');
+}
+
+async function saveAct(fecha){
+  const tipo=document.getElementById('actTipo').value;
+  const det=document.getElementById('actDet').value;
+  await sb.from('notas').insert({texto:`${tipo}${det?' - '+det:''}`,tag:'Actividad',fecha});
+  showToast('Actividad guardada ✓');
+}
+
+async function savePS(fecha){
+  const v=document.getElementById('psP').classList.contains('active')?'P':'S';
+  await sb.from('notas').insert({texto:v,tag:'Personal',fecha});
+  showToast('Registrado ✓');
+}
+
+async function saveKm(fecha){
+  const km=document.getElementById('kmVal').value;
+  if(!km)return showToast('Ingresá los km');
+  await sb.from('notas').insert({texto:`KM: ${km}`,tag:'Kilometraje',fecha});
+  showToast('KM guardado ✓');
+}
+
+// ===== MES =====
+function mesPrev(){mesMonth--;if(mesMonth<0){mesMonth=11;mesYear--;}renderMes();}
+function mesNext(){mesMonth++;if(mesMonth>11){mesMonth=0;mesYear++;}renderMes();}
+
+function mesTab(btn,tab){
+  document.querySelectorAll('#screen-mes .pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  renderMesContent(tab);
+}
+
+function renderMes(){
+  const months=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('mes-title').textContent=`${months[mesMonth]} ${mesYear}`;
+  renderMesContent('resumen');
+}
+
+function getMesMovs(tipo){
+  return movimientos.filter(m=>{
+    const d=new Date(m.fecha);
+    return d.getMonth()===mesMonth&&d.getFullYear()===mesYear&&(!tipo||m.tipo===tipo);
+  });
+}
+
+function renderMesContent(tab){
+  const c=document.getElementById('mesContent');
+  const salidas=getMesMovs('Salida');
+  const entradas=getMesMovs('Entrada');
+  const totalIn=entradas.reduce((s,m)=>s+Number(m.monto),0);
+  const totalOut=salidas.reduce((s,m)=>s+Number(m.monto),0);
+  const balance=totalIn-totalOut;
+  const key=`${mesYear}-${mesMonth}`;
+
+  if(tab==='resumen'){
+    // By category
+    const byCat={};
+    salidas.forEach(m=>{byCat[m.categoria]=(byCat[m.categoria]||0)+Number(m.monto);});
+
+    // Services with override/grisado logic
+    const servicios=['EPE','Gas NEA','Agua','API','TGI Comuna','Seguro casa','Celular','Celular Ayelen','Internet','Internet suegra','Pegazo'];
+    const tarjetas=['Visa Santander','Amex Santander','Visa Hipotecario','MC Hipotecario','MC Mercadopago'];
+
+    const makeRow=(label,catKey,isService)=>{
+      const overrideKey=`${key}_${catKey}`;
+      const confirmed=mesOverrides[overrideKey];
+      const estimated=byCat[catKey]||getPrevMonthVal(catKey);
+      const val=confirmed!==undefined?confirmed:estimated;
+      const isConfirmed=confirmed!==undefined;
+      return`<div class="mes-row">
+        <div><div class="mes-row-label">${label}</div></div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="mes-row-value ${isConfirmed?'confirmed':'estimated'}">$${fmt(val)}</span>
+          <div class="mes-edit-btn" onclick="openMesEdit('${overrideKey}','${label}',${val})"><i class="ti ti-pencil"></i></div>
+        </div>
+      </div>`;
+    };
+
+    // Regular categories (from movimientos, not services)
+    const regularCats=Object.entries(byCat).filter(([c])=>!servicios.includes(c)&&!tarjetas.includes(c));
+
+    c.innerHTML=`
+      <!-- INGRESOS -->
+      <div class="sec">Ingresos</div>
+      <div class="card">
+        ${entradas.length===0?'<div style="color:var(--text3);font-size:13px;">Sin ingresos este mes</div>':
+          entradas.map(m=>`<div class="mes-row">
+            <div class="mes-row-label">${m.detalle||m.categoria}</div>
+            <span class="mes-row-value" style="color:var(--green);">+$${fmt(m.monto)}</span>
+          </div>`).join('')}
+        <div class="mes-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:8px;">
+          <span style="font-size:12px;font-weight:600;color:var(--text3);">TOTAL</span>
+          <span style="font-size:15px;font-weight:600;color:var(--green);">$${fmt(totalIn)}</span>
+        </div>
+      </div>
+
+      <!-- EGRESOS por categoría -->
+      ${regularCats.length>0?`
+      <div class="sec">Egresos por categoría</div>
+      <div class="card">
+        ${regularCats.sort((a,b)=>b[1]-a[1]).map(([cat,val])=>`
+          <div class="mes-row">
+            <div class="mes-row-label">${cat}</div>
+            <span class="mes-row-value confirmed">-$${fmt(val)}</span>
+          </div>`).join('')}
+      </div>`:''}
+
+      <!-- TARJETAS -->
+      <div class="sec">Tarjetas</div>
+      <div class="card">
+        ${tarjetas.map(t=>makeRow(t,t,false)).join('')}
+      </div>
+
+      <!-- SERVICIOS -->
+      <div class="sec">Servicios del hogar</div>
+      <div class="card">
+        ${servicios.map(s=>makeRow(s,s,true)).join('')}
+      </div>
+
+      <!-- BALANCE -->
+      <div class="sec">Balance</div>
+      <div class="card">
+        <div class="mes-row">
+          <span class="mes-row-label">Ingresos</span>
+          <span class="mes-row-value" style="color:var(--green);">+$${fmt(totalIn)}</span>
+        </div>
+        <div class="mes-row">
+          <span class="mes-row-label">Egresos</span>
+          <span class="mes-row-value neg">-$${fmt(totalOut)}</span>
+        </div>
+        <div class="mes-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:8px;">
+          <span style="font-size:13px;font-weight:600;">Balance</span>
+          <span style="font-size:17px;font-weight:600;color:${balance>=0?'var(--green)':'var(--red)'};">${balance>=0?'+':''} $${fmt(Math.abs(balance))}</span>
+        </div>
+      </div>`;
+  } else {
+    // ESTADÍSTICAS
+    const byCat={};
+    salidas.forEach(m=>{byCat[m.categoria]=(byCat[m.categoria]||0)+Number(m.monto);});
+    const byMedio={};
+    salidas.forEach(m=>{byMedio[m.medio]=(byMedio[m.medio]||0)+Number(m.monto);});
+    c.innerHTML=`
+      <div class="card">
+        <div class="card-title">Gastos por categoría — % del ingreso</div>
+        ${Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([cat,val])=>{
+          const pct=totalIn>0?Math.round(val/totalIn*100):0;
+          return`<div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+              <span style="font-size:12px;color:var(--text2);">${cat}</span>
+              <span style="font-size:12px;color:var(--text);">$${fmt(val)} <span style="color:var(--text3);">${pct}%</span></span>
+            </div>
+            <div class="progress"><div class="progress-fill" style="width:${Math.min(pct,100)}%"></div></div>
+          </div>`;
+        }).join('')||'<p style="color:var(--text3);font-size:13px;">Sin datos</p>'}
+      </div>
+      <div class="card">
+        <div class="card-title">Por medio de pago</div>
+        ${Object.entries(byMedio).sort((a,b)=>b[1]-a[1]).map(([med,val])=>{
+          const pct=totalOut>0?Math.round(val/totalOut*100):0;
+          return`<div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+              <span style="font-size:12px;color:var(--text2);">${med}</span>
+              <span style="font-size:12px;color:var(--text);">${pct}%</span>
+            </div>
+            <div class="progress"><div class="progress-fill" style="width:${pct}%;background:var(--green);"></div></div>
+          </div>`;
+        }).join('')||'<p style="color:var(--text3);font-size:13px;">Sin datos</p>'}
+      </div>`;
+  }
+}
+
+function getPrevMonthVal(cat){
+  let pm=mesMonth-1,py=mesYear;
+  if(pm<0){pm=11;py--;}
+  const prev=movimientos.filter(m=>{
+    const d=new Date(m.fecha);
+    return d.getMonth()===pm&&d.getFullYear()===py&&m.tipo==='Salida'&&m.categoria===cat;
+  });
+  return prev.reduce((s,m)=>s+Number(m.monto),0);
+}
+
+function openMesEdit(key,label,currentVal){
+  document.getElementById('mesEditTitle').textContent=`Actualizar: ${label}`;
+  document.getElementById('mesEditVal').value=currentVal||'';
+  document.getElementById('mesEditKey').value=key;
+  openModal('modalMesEdit');
+}
+
+function saveMesEdit(){
+  const key=document.getElementById('mesEditKey').value;
+  const val=parseFloat(document.getElementById('mesEditVal').value)||0;
+  mesOverrides[key]=val;
+  localStorage.setItem('mes_overrides',JSON.stringify(mesOverrides));
+  closeModal('modalMesEdit');
+  showToast('Confirmado ✓');
+  renderMesContent('resumen');
+}
+
+// ===== ALACENA =====
+function alaTab(btn,tab){
+  document.querySelectorAll('#screen-alacena .pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  renderAla(tab);
+}
+
+function renderAla(tab){
+  const c=document.getElementById('alaContent');
+  if(tab==='stock'){
+    if(alacena.length===0){c.innerHTML='<div class="empty"><i class="ti ti-archive-off"></i><p>Alacena vacía. Usá el + para agregar productos.</p></div>';return;}
+    // Group by categoria
+    const cats={};
+    alacena.forEach(p=>{const cat=p.categoria||'Sin categoría';if(!cats[cat])cats[cat]=[];cats[cat].push(p);});
+    c.innerHTML=Object.entries(cats).map(([cat,items])=>`
+      <div class="sec">${cat}</div>
+      <div class="card">${items.map(p=>{
+        const lvl=p.stock<=1?'tag-red':p.stock<=3?'tag-yellow':'tag-green';
+        const lbl=p.stock<=1?'Bajo':p.stock<=3?'Poco':'OK';
+        return`<div class="stock-item">
+          <div class="stock-info">
+            <div class="stock-name">${p.nombre}</div>
+            <div class="stock-sub">${p.unidad||''} ${p.vencimiento?'· Vto: '+fd(p.vencimiento):''}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="tag ${lvl}">${lbl}</span>
+            <div class="qty-ctrl">
+              <button class="qty-btn" onclick="updStock(${p.id},-1)">−</button>
+              <span class="qty-val">${p.stock}</span>
+              <button class="qty-btn" onclick="updStock(${p.id},1)">+</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}</div>`).join('');
+  } else if(tab==='control'){
+    c.innerHTML=`
+      <div class="card" style="margin-bottom:12px;">
+        <p style="font-size:13px;color:var(--text2);line-height:1.5;">Ingresá el stock físico que ves ahora. La app calcula el consumo automáticamente.</p>
+      </div>
+      <div class="card">${alacena.map(p=>`
+        <div class="stock-item">
+          <div class="stock-info">
+            <div class="stock-name">${p.nombre}</div>
+            <div class="stock-sub">Actual: ${p.stock} ${p.unidad||''}</div>
+          </div>
+          <input type="number" class="form-input" style="width:65px;text-align:center;padding:6px;" id="ctrl_${p.id}" value="${p.stock}" min="0">
+        </div>`).join('')}
+      </div>
+      <button class="btn btn-primary btn-full" style="margin-top:12px;" onclick="saveControl()">Guardar control</button>`;
+  } else if(tab==='precios'){
+    const conPrecio=alacena.filter(p=>p.precio>0).sort((a,b)=>new Date(b.fecha_compra)-new Date(a.fecha_compra));
+    c.innerHTML=conPrecio.length===0?
+      '<div class="empty"><i class="ti ti-tag-off"></i><p>Sin precios registrados</p></div>':
+      `<div class="card">${conPrecio.map(p=>`
+        <div class="row">
+          <div>
+            <div class="row-label">${p.nombre}</div>
+            <div class="row-sub">${p.lugar||''} · ${fd(p.fecha_compra)}</div>
+          </div>
+          <span class="row-value">$${fmt(p.precio)}<span style="color:var(--text3);font-size:11px;">/${p.unidad||'u'}</span></span>
+        </div>`).join('')}</div>`;
+  } else {
+    const bajos=alacena.filter(p=>p.stock<=1);
+    c.innerHTML=bajos.length===0?
+      '<div class="empty"><i class="ti ti-check"></i><p>Todo con stock suficiente</p></div>':
+      `<div class="card">${bajos.map(p=>`
+        <div class="row">
+          <div><div class="row-label">${p.nombre}</div><div class="row-sub">Stock: ${p.stock} ${p.unidad||''}</div></div>
+          <span class="tag tag-red">Comprar</span>
+        </div>`).join('')}</div>`;
+  }
+}
+
+async function updStock(id,delta){
+  const item=alacena.find(p=>p.id===id);if(!item)return;
+  const ns=Math.max(0,item.stock+delta);
+  await sb.from('alacena').update({stock:ns}).eq('id',id);
+  item.stock=ns;renderAla('stock');
+}
+
+async function saveControl(){
+  for(const p of alacena){
+    const inp=document.getElementById('ctrl_'+p.id);if(!inp)continue;
+    const ns=parseFloat(inp.value);
+    if(ns!==p.stock){await sb.from('alacena').update({stock:ns}).eq('id',p.id);p.stock=ns;}
+  }
+  showToast('Control guardado ✓');renderAla('stock');
+}
+
+async function saveAla(){
+  const data={nombre:document.getElementById('aNombre').value,
+    stock:parseFloat(document.getElementById('aStock').value)||0,
+    unidad:document.getElementById('aUnidad').value,
+    categoria:document.getElementById('aCategoria').value,
+    precio:parseFloat(document.getElementById('aPrecio').value)||0,
+    lugar:document.getElementById('aLugar').value,
+    vencimiento:document.getElementById('aVto').value||null,
+    fecha_compra:document.getElementById('aFecha').value};
+  if(!data.nombre)return showToast('Ingresá el nombre');
+  const{data:ins,error}=await sb.from('alacena').insert(data).select();
+  if(error)return showToast('Error al guardar');
+  alacena.push(ins[0]);
+  alacena.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  closeModal('modalAla');
+  showToast('Producto guardado ✓');renderAla('stock');
+}
+
+async function saveNota(){
+  const texto=document.getElementById('nTexto').value;
+  const tag=document.getElementById('nTag').value;
+  const fecha=document.getElementById('nFecha').value;
+  if(!texto.trim())return showToast('Escribí algo primero');
+  const{error}=await sb.from('notas').insert({texto,tag,fecha});
+  if(error)return showToast('Error');
+  notas.unshift({texto,tag,fecha,id:Date.now()});
+  closeModal('modalNota');
+  document.getElementById('nTexto').value='';
+  document.getElementById('nTag').value='';
+  showToast('Nota guardada ✓');renderNotas('');
+}
+
+function filterNotas(tag){renderNotas(tag);}
+
+function renderNotas(tag){
+  const tags=[...new Set(notas.map(n=>n.tag).filter(Boolean))];
+  const pills=document.getElementById('notaTagPills');
+  pills.innerHTML=`<button class="pill ${!tag?'active':''}" onclick="filterNotas('')">Todas</button>`+
+    tags.map(t=>`<button class="pill ${tag===t?'active':''}" onclick="filterNotas('${t}')">#${t}</button>`).join('');
+  const filtered=tag?notas.filter(n=>n.tag===tag):notas;
+  const list=document.getElementById('notasList');
+  list.innerHTML=filtered.length===0?
+    '<div class="empty"><i class="ti ti-note-off"></i><p>Sin notas</p></div>':
+    filtered.map(n=>`<div class="card">
+      ${n.tag?`<span class="tag tag-purple" style="margin-bottom:7px;display:inline-block;">#${n.tag}</span>`:''}
+      <div style="font-size:13px;color:var(--text2);line-height:1.5;">${n.texto}</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:5px;">${fd(n.fecha)}</div>
+    </div>`).join('');
+}
+
+// ===== ONIX =====
+function onixTab(btn,tab){
+  document.querySelectorAll('#screen-onix .pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');renderOnix(tab);
+}
+
+function setOnixTipo(t){
+  onixTipo=t;
+  ['carga','gasto','km'].forEach(x=>document.getElementById('ot'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',t===x));
+  const f=document.getElementById('onixFormFields');
+  if(t==='carga')f.innerHTML=`
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Litros</label><input class="form-input" type="number" id="oLitros" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">Precio/litro</label><input class="form-input" type="number" id="oPrecioL" placeholder="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">KM anterior</label><input class="form-input" type="number" id="oKmAnt" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">KM actual</label><input class="form-input" type="number" id="oKmAct" placeholder="0"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Lugar</label><input class="form-input" type="text" id="oLugar" placeholder="YPF, Shell..."></div>`;
+  else if(t==='gasto')f.innerHTML=`
+    <div class="form-group"><label class="form-label">Detalle</label><input class="form-input" type="text" id="oDetalle" placeholder="Service, gomería, foquito..."></div>
+    <div class="form-group"><label class="form-label">Monto</label><input class="form-input" type="number" id="oMonto" placeholder="0"></div>`;
+  else f.innerHTML=`
+    <div class="form-group"><label class="form-label">KM al cierre del mes</label><input class="form-input" type="number" id="oKmAct" placeholder="0"></div>`;
+}
+
+async function saveOnix(){
+  const data={tipo:onixTipo,fecha:document.getElementById('oFecha').value};
+  if(onixTipo==='carga'){
+    data.litros=parseFloat(document.getElementById('oLitros')?.value)||0;
+    data.precio_litro=parseFloat(document.getElementById('oPrecioL')?.value)||0;
+    data.km_ant=parseFloat(document.getElementById('oKmAnt')?.value)||0;
+    data.km_act=parseFloat(document.getElementById('oKmAct')?.value)||0;
+    data.lugar=document.getElementById('oLugar')?.value||'';
+  } else if(onixTipo==='gasto'){
+    data.detalle=document.getElementById('oDetalle')?.value||'';
+    data.monto=parseFloat(document.getElementById('oMonto')?.value)||0;
+  } else {
+    data.km_act=parseFloat(document.getElementById('oKmAct')?.value)||0;
+  }
+  const{error}=await sb.from('vehiculo').insert(data);
+  if(error)return showToast('Error al guardar');
+  onixData.unshift(data);
+  closeModal('modalOnix');showToast('Registrado ✓');renderOnix('resumen');
+}
+
+function renderOnix(tab){
+  const c=document.getElementById('onixContent');
+  if(tab==='resumen'){
+    const cargas=onixData.filter(v=>v.tipo==='carga');
+    const lastKm=cargas.length>0?Math.max(...cargas.map(v=>v.km_act||0)):0;
+    const totalLt=cargas.reduce((s,v)=>s+(v.litros||0),0);
+    const minKm=cargas.length>0?Math.min(...cargas.map(v=>v.km_ant||0)):0;
+    const totalKm=lastKm-minKm;
+    const consumo=totalLt>0&&totalKm>0?(totalKm/totalLt).toFixed(1):'—';
+    c.innerHTML=`
+      <div class="card">
+        <div style="text-align:center;padding:10px 0;">
+          <div style="font-size:32px;font-weight:600;">${fmt(lastKm)}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px;">kilómetros actuales</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div class="card" style="margin:0;text-align:center;">
+          <div class="card-title">Consumo</div>
+          <div style="font-size:20px;font-weight:600;color:var(--accent2);">${consumo}</div>
+          <div style="font-size:10px;color:var(--text3);">km/litro</div>
+        </div>
+        <div class="card" style="margin:0;text-align:center;">
+          <div class="card-title">Litros cargados</div>
+          <div style="font-size:20px;font-weight:600;">${totalLt.toFixed(1)}</div>
+          <div style="font-size:10px;color:var(--text3);">total</div>
+        </div>
+      </div>`;
+  } else if(tab==='cargas'){
+    const cargas=onixData.filter(v=>v.tipo==='carga');
+    c.innerHTML=cargas.length===0?
+      '<div class="empty"><i class="ti ti-gas-station"></i><p>Sin cargas registradas</p></div>':
+      `<div class="card">${cargas.map(v=>`
+        <div class="row">
+          <div>
+            <div class="row-label">${v.litros}L · ${v.lugar||''}</div>
+            <div class="row-sub">KM ${fmt(v.km_ant)} → ${fmt(v.km_act)} · ${fd(v.fecha)}</div>
+          </div>
+          <span class="row-value">$${fmt((v.litros||0)*(v.precio_litro||0))}</span>
+        </div>`).join('')}</div>`;
+  } else {
+    const gastos=onixData.filter(v=>v.tipo==='gasto');
+    c.innerHTML=gastos.length===0?
+      '<div class="empty"><i class="ti ti-tool"></i><p>Sin gastos registrados</p></div>':
+      `<div class="card">${gastos.map(v=>`
+        <div class="row">
+          <div><div class="row-label">${v.detalle||'Gasto'}</div><div class="row-sub">${fd(v.fecha)}</div></div>
+          <span class="row-value neg">$${fmt(v.monto)}</span>
+        </div>`).join('')}</div>`;
+  }
+}
+
+// ===== JC =====
+function jcTab(btn,tab){
+  document.querySelectorAll('#screen-jc .pill').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');renderJC(tab);
+}
+
+function setJCTipo(t){
+  jcTipo=t;
+  document.getElementById('jtMed').classList.toggle('active',t==='medicion');
+  document.getElementById('jtDia').classList.toggle('active',t==='diario');
+  const f=document.getElementById('jcFormFields');
+  if(t==='medicion')f.innerHTML=`<div class="form-row-3">
+    <div class="form-group"><label class="form-label">Peso kg</label><input class="form-input" type="number" id="jPeso" step="0.1" placeholder="0.0"></div>
+    <div class="form-group"><label class="form-label">Talla cm</label><input class="form-input" type="number" id="jTalla" step="0.1" placeholder="0"></div>
+    <div class="form-group"><label class="form-label">P.Cef cm</label><input class="form-input" type="number" id="jPCef" step="0.1" placeholder="0"></div>
+  </div>`;
+  else f.innerHTML=`
+    <div class="form-group"><label class="form-label">Observaciones</label>
+      <textarea class="form-input" id="jTexto" rows="3" placeholder="Visita médica, vacuna, observaciones..."></textarea>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+      <button class="pill" onclick="addJCTag(this,'Médico')">🏥 Médico</button>
+      <button class="pill" onclick="addJCTag(this,'Vacuna')">💉 Vacuna</button>
+      <button class="pill" onclick="addJCTag(this,'Sin caca')">💩 Sin caca</button>
+      <button class="pill" onclick="addJCTag(this,'Llanto')">😢 Llanto</button>
+    </div>`;
+}
+
+function addJCTag(btn,tag){
+  btn.classList.toggle('active');
+  const inp=document.getElementById('jTexto');
+  if(inp&&!inp.value.includes(tag))inp.value=inp.value?inp.value+', '+tag:tag;
+}
+
+async function saveJC(){
+  const fecha=document.getElementById('jFecha').value;
+  let data={tipo:jcTipo,fecha};
+  if(jcTipo==='medicion'){
+    data.peso=parseFloat(document.getElementById('jPeso')?.value)||null;
+    data.talla=parseFloat(document.getElementById('jTalla')?.value)||null;
+    data.pcef=parseFloat(document.getElementById('jPCef')?.value)||null;
+  } else {
+    data.texto=document.getElementById('jTexto')?.value||'';
+  }
+  const{error}=await sb.from('jc').insert(data);
+  if(error)return showToast('Error');
+  jcData.unshift(data);
+  closeModal('modalJC');showToast('Guardado ✓');
+  renderJC(jcTipo==='medicion'?'crecimiento':'diario');
+}
+
+function renderJC(tab){
+  const now=new Date();
+  const days=Math.floor((now-JC_BIRTH)/86400000);
+  const months=Math.floor(days/30);
+  const remDays=days-months*30;
+  document.getElementById('jcAge').textContent=`${months} meses y ${remDays} días`;
+  const c=document.getElementById('jcContent');
+  if(tab==='crecimiento'){
+    const meds=jcData.filter(j=>j.tipo==='medicion').sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+    const last=meds[0];
+    c.innerHTML=last?`
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;">
+        ${[['Peso','kg',last.peso],['Talla','cm',last.talla],['P.Cef','cm',last.pcef]].map(([l,u,v])=>`
+          <div class="card" style="margin:0;text-align:center;">
+            <div class="jc-metric-val">${v||'—'}</div>
+            <div style="font-size:10px;color:var(--text3);">${l} ${u}</div>
+          </div>`).join('')}
+      </div>
+      <div class="card">
+        <div class="card-title">Historial</div>
+        ${meds.map(m=>`<div class="row">
+          <span class="row-label">${fd(m.fecha)}</span>
+          <span class="row-value">${m.peso||'—'}kg · ${m.talla||'—'}cm</span>
+        </div>`).join('')}
+      </div>`:'<div class="empty"><i class="ti ti-ruler-measure"></i><p>Sin mediciones aún</p></div>';
+  } else {
+    const diario=jcData.filter(j=>j.tipo==='diario').sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+    c.innerHTML=diario.length===0?
+      '<div class="empty"><i class="ti ti-book-off"></i><p>Sin registros en el diario</p></div>':
+      diario.map(d=>`<div class="card">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">${fd(d.fecha)}</div>
+        <div style="font-size:13px;color:var(--text2);">${d.texto}</div>
+      </div>`).join('');
+  }
+}
+
+// ===== IMPORT =====
+async function handleImport(input,tipo){
+  const file=input.files[0];if(!file)return;
+  const labelId=tipo==='movimientos'?'fileMovsLabel':tipo==='alacena'?'fileAlaLabel':'fileHorasLabel';
+  document.getElementById(labelId).textContent='Procesando...';
+  try{
+    const data=await file.arrayBuffer();
+    const wb=XLSX.read(data);
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{raw:false});
+    let count=0;
+    if(tipo==='movimientos'){
+      const toInsert=[];
+      for(const r of rows){
+        const fecha=r['Fecha']||r['fecha'];if(!fecha)continue;
+        const iso=toISO(fecha);
+        const yr=parseInt(iso.split('-')[0]);
+        if(yr!==2026)continue;
+        const salida=parseFloat((r['Salida']||r['salida']||'').toString().replace(/[^0-9.]/g,''))||0;
+        const entrada=parseFloat((r['Entrada']||r['entrada']||'').toString().replace(/[^0-9.]/g,''))||0;
+        if(salida>0)toInsert.push({tipo:'Salida',monto:salida,medio:r['Medio']||r['medio']||'Efectivo',categoria:r['Categoria']||r['Categoría']||r['categoria']||'Varios',detalle:r['Detalle']||r['detalle']||'',cuotas:1,fecha:iso});
+        if(entrada>0)toInsert.push({tipo:'Entrada',monto:entrada,medio:r['Medio']||r['medio']||'ICBC',categoria:r['Categoria']||r['Categoría']||r['categoria']||'Ingreso',detalle:r['Detalle']||r['detalle']||'',cuotas:1,fecha:iso});
+        count++;
+      }
+      if(toInsert.length>0){
+        const chunkSize=100;
+        for(let i=0;i<toInsert.length;i+=chunkSize){
+          await sb.from('movimientos').insert(toInsert.slice(i,i+chunkSize));
+        }
+        movimientos=[...toInsert.reverse(),...movimientos];
+        count=toInsert.length;
+      }
+    } else if(tipo==='alacena'){
+      for(const r of rows){
+        const nombre=r['Producto']||r['producto']||r['Nombre']||r['nombre'];if(!nombre)continue;
+        const data={nombre,precio:parseFloat(r['Precio unitario']||r['precio_unitario']||0)||0,
+          lugar:r['Lugar']||r['lugar']||'',
+          fecha_compra:r['Fecha']||r['fecha']?toISO(r['Fecha']||r['fecha']):null,
+          stock:0,unidad:r['Unidad']||r['unidad']||'u'};
+        await sb.from('alacena').insert(data);count++;
+      }
+      const{data:al}=await sb.from('alacena').select('*').order('nombre');
+      alacena=al||[];
+    } else if(tipo==='horas'){
+      const toIns=[];
+      for(const r of rows){
+        const fecha=r['Fecha']||r['fecha'];if(!fecha)continue;
+        toIns.push({fecha:toISO(fecha),tipo:r['Tipo']||r['tipo']||'Presencial',
+          entrada:r['Entrada']||r['entrada']||'',salida:r['Salida']||r['salida']||''});
+        count++;
+      }
+      if(toIns.length>0){
+        for(let i=0;i<toIns.length;i+=100)await sb.from('horas').insert(toIns.slice(i,i+100));
+        horas=[...toIns,...horas];
+      }
+    }
+    document.getElementById(labelId).textContent=`✓ ${count} registros importados`;
+    showToast(`${count} registros importados ✓`);
+    renderCatSelect();
+  }catch(e){
+    console.error(e);
+    document.getElementById(labelId).textContent='Error al procesar el archivo';
+    showToast('Error al importar');
+  }
+}
+
+// ===== START =====
+window.addEventListener('load',()=>{
+  document.getElementById('loading').style.display='flex';
+  checkAuth();
+});
+</script>
+</body>
+</html>
