@@ -228,6 +228,9 @@ textarea.form-input{resize:vertical;}
   <button class="auth-btn" onclick="authWithBiometric()">
     <i class="ti ti-fingerprint"></i> Ingresar con huella
   </button>
+  <button class="auth-btn" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border);" onclick="authWithPin()">
+    <i class="ti ti-password"></i> Ingresar con PIN
+  </button>
 </div>
 
 <!-- LOADING -->
@@ -687,6 +690,24 @@ async function registerBiometric(){
   }
 }
 
+
+async function authWithPin(){
+  const savedPin=localStorage.getItem('app_pin');
+  if(!savedPin){
+    const pin=prompt('Creá tu PIN (4 dígitos):');
+    if(!pin||pin.length!==4||!/^\d+$/.test(pin)){showToast('PIN inválido. Usá 4 dígitos numéricos.');return;}
+    const pin2=prompt('Confirmá tu PIN:');
+    if(pin!==pin2){showToast('Los PINs no coinciden.');return;}
+    localStorage.setItem('app_pin',pin);
+    sessionStorage.setItem('authed','1');
+    document.getElementById('authScreen').classList.remove('show');
+    startApp();
+  } else {
+    const pin=prompt('Ingresá tu PIN:');
+    if(pin===savedPin){sessionStorage.setItem('authed','1');document.getElementById('authScreen').classList.remove('show');startApp();}
+    else showToast('PIN incorrecto');
+  }
+}
 async function authWithBiometric(){
   setLoading('Verificando...');
   document.getElementById('authScreen').classList.remove('show');
@@ -1487,3 +1508,4 @@ window.addEventListener('load',()=>{document.getElementById('loading').style.dis
 </script>
 </body>
 </html>
+
