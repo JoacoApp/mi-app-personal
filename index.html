@@ -1332,12 +1332,22 @@ function renderMes(){
 }
 
 function getMesMovs(tipo){
-  return movimientos.filter(m=>{const d=new Date(m.fecha);return d.getMonth()===mesMonth&&d.getFullYear()===mesYear&&(!tipo||m.tipo===tipo);});
+  return movimientos.filter(m=>{
+    if(!m.fecha)return false;
+    const parts=m.fecha.split('-');
+    const yr=parseInt(parts[0]),mo=parseInt(parts[1])-1;
+    return mo===mesMonth&&yr===mesYear&&(!tipo||m.tipo===tipo);
+  });
 }
 
 function getPrevVal(cat){
   let pm=mesMonth-1,py=mesYear;if(pm<0){pm=11;py--;}
-  const prev=movimientos.filter(m=>{const d=new Date(m.fecha);return d.getMonth()===pm&&d.getFullYear()===py&&m.tipo==='Salida'&&m.categoria===cat;});
+  const prev=movimientos.filter(m=>{
+    if(!m.fecha)return false;
+    const parts=m.fecha.split('-');
+    const yr=parseInt(parts[0]),mo=parseInt(parts[1])-1;
+    return mo===pm&&yr===py&&m.tipo==='Salida'&&m.categoria===cat;
+  });
   return prev.reduce((s,m)=>s+Number(m.monto),0);
 }
 
@@ -1695,6 +1705,7 @@ window.addEventListener('load',()=>{document.getElementById('loading').style.dis
 </script>
 </body>
 </html>
+
 
 
 
