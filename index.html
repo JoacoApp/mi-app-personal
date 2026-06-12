@@ -351,6 +351,7 @@ textarea.form-input{resize:vertical;}
       <div class="pills">
         <button class="pill active" onclick="mesTab(this,'resumen')">Resumen</button>
         <button class="pill" onclick="mesTab(this,'estadisticas')">Estadísticas</button>
+        <button class="pill" onclick="mesTab(this,'saldos')">Saldos</button>
       </div>
       <div id="mesContent"></div>
     </div>
@@ -638,6 +639,41 @@ textarea.form-input{resize:vertical;}
     <input type="hidden" id="mesEditKey">
     <button class="btn btn-primary btn-full" onclick="saveMesEdit()">Confirmar</button>
     <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeModal('modalMesEdit')">Cancelar</button>
+  </div>
+</div>
+
+
+<!-- Editar Movimiento -->
+<div class="modal-overlay" id="modalMovEdit">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>Editar movimiento</h2>
+    <input type="hidden" id="editMovId">
+    <div class="form-group">
+      <div class="toggle-group">
+        <button class="toggle-btn active" id="etbSalida" onclick="setEditMovTipo('Salida')">↑ Salida</button>
+        <button class="toggle-btn" id="etbEntrada" onclick="setEditMovTipo('Entrada')">↓ Entrada</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Monto</label>
+      <input class="form-input" type="number" id="editMonto" placeholder="0" style="font-size:22px;font-weight:600;padding:14px 12px;">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Detalle</label>
+      <textarea class="form-input" id="editDetalle" rows="2"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" type="date" id="editFecha">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categoría</label>
+      <input class="form-input" type="text" id="editCategoria">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveEditMov()">Guardar cambios</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:8px;color:var(--red);border-color:var(--red);" onclick="confirmDeleteMov()">Eliminar</button>
+    <button class="btn btn-secondary btn-full" style="margin-top:8px;" onclick="closeModal('modalMovEdit')">Cancelar</button>
   </div>
 </div>
 
@@ -999,30 +1035,104 @@ function renderMovimientos(){
   const el=document.getElementById('movList');
   if(list.length===0){el.innerHTML='<div class="empty"><i class="ti ti-receipt-off"></i><p>Sin movimientos</p></div>';return;}
   el.innerHTML=`<div class="card">${list.slice(0,60).map(m=>`
-    <div class="row">
-      <div>
-        <div class="row-label">${m.detalle||m.categoria}</div>
-        <div class="row-sub">${m.categoria} · ${m.medio} · ${fd(m.fecha)}${m.cuotas>1?' · '+m.cuotas+'c':''}</div>
+    <div class="row" style="gap:8px;">
+      <div style="flex:1;min-width:0;cursor:pointer;" onclick="openEditMov(${m.id})">
+        <div class="row-label" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.detalle||m.categoria}</div>
+        <div class="row-sub">${m.categoria} · ${m.medio} · ${fd(m.fecha)}${m.cuotas>1?' · c'+m.cuota_nro+'/'+m.cuotas_total:''}</div>
       </div>
-      <span class="row-value ${m.tipo==='Entrada'?'pos':'neg'}">${m.tipo==='Entrada'?'+':'-'}$${fmt(m.monto)}</span>
+      <span class="row-value ${m.tipo==='Entrada'?'pos':'neg'}" style="flex-shrink:0;">${m.tipo==='Entrada'?'+':'-'}$${fmt(m.monto)}</span>
     </div>`).join('')}</div>`;
 }
 
 async function saveMov(){
-  const monto=parseFloat(document.getElementById('mMonto').value);
-  if(!monto)return showToast('Ingresá un monto');
+  const montoRaw=parseFloat(document.getElementById('mMonto').value);
+  if(!montoRaw)return showToast('Ingresá un monto');
   const manualFecha=document.getElementById('mFecha');
-  const fecha=manualFecha.style.display!=='none'&&manualFecha.value?manualFecha.value:selectedModalDate;
-  const data={tipo:movTipo,monto,medio:lastMedio,categoria:lastCat,
-    detalle:document.getElementById('mDetalle').value,
-    cuotas:parseInt(document.getElementById('mCuotas').value)||1,fecha};
-  const{data:ins,error}=await sb.from('movimientos').insert(data).select();
-  if(error)return showToast('Error al guardar');
-  movimientos.unshift(ins[0]);
+  const fechaBase=manualFecha.style.display!=='none'&&manualFecha.value?manualFecha.value:selectedModalDate;
+  const cuotasTotal=parseInt(document.getElementById('mCuotas').value)||1;
+  const detalle=document.getElementById('mDetalle').value;
+  const montoCuota=cuotasTotal>1?Math.round(montoRaw/cuotasTotal*100)/100:montoRaw;
+  const grupoId=cuotasTotal>1?Date.now().toString(36):null;
+  const rows=[];
+  for(let i=0;i<cuotasTotal;i++){
+    const d=new Date(fechaBase+'T12:00:00');
+    d.setMonth(d.getMonth()+i);
+    const f=d.toISOString().split('T')[0];
+    rows.push({tipo:movTipo,monto:montoCuota,medio:lastMedio,categoria:lastCat,
+      detalle:cuotasTotal>1?`${detalle} (${i+1}/${cuotasTotal})`:detalle,
+      cuotas:cuotasTotal,cuota_nro:i+1,cuotas_total:cuotasTotal,grupo_cuota:grupoId,fecha:f});
+  }
+  const{data:ins,error}=await sb.from('movimientos').insert(rows).select();
+  if(error){console.error(error);return showToast('Error al guardar');}
+  movimientos.unshift(...(ins||[]));
   document.getElementById('modalMov').classList.remove('open');
   document.getElementById('mMonto').value='';document.getElementById('mDetalle').value='';
-  showToast('Movimiento guardado ✓');renderMovimientos();
+  document.getElementById('mCuotas').value='1';
+  showToast(cuotasTotal>1?`${cuotasTotal} cuotas generadas ✓`:'Movimiento guardado ✓');
+  renderMovimientos();
 }
+
+let editMovTipo='Salida';
+function setEditMovTipo(t){
+  editMovTipo=t;
+  document.getElementById('etbSalida').classList.toggle('active',t==='Salida');
+  document.getElementById('etbEntrada').classList.toggle('active',t==='Entrada');
+}
+
+function openEditMov(id){
+  const m=movimientos.find(x=>x.id===id);if(!m)return;
+  document.getElementById('editMovId').value=id;
+  document.getElementById('editMonto').value=m.monto;
+  document.getElementById('editDetalle').value=m.detalle||'';
+  document.getElementById('editFecha').value=m.fecha;
+  document.getElementById('editCategoria').value=m.categoria||'';
+  editMovTipo=m.tipo;
+  document.getElementById('etbSalida').classList.toggle('active',m.tipo==='Salida');
+  document.getElementById('etbEntrada').classList.toggle('active',m.tipo==='Entrada');
+  openModal('modalMovEdit');
+}
+
+async function saveEditMov(){
+  const id=parseInt(document.getElementById('editMovId').value);
+  const monto=parseFloat(document.getElementById('editMonto').value);
+  if(!monto)return showToast('Ingresá un monto');
+  const detalle=document.getElementById('editDetalle').value;
+  const fecha=document.getElementById('editFecha').value;
+  const categoria=document.getElementById('editCategoria').value;
+  const{error}=await sb.from('movimientos').update({tipo:editMovTipo,monto,detalle,fecha,categoria}).eq('id',id);
+  if(error){console.error(error);return showToast('Error al guardar');}
+  const idx=movimientos.findIndex(x=>x.id===id);
+  if(idx>=0){movimientos[idx]={...movimientos[idx],tipo:editMovTipo,monto,detalle,fecha,categoria};}
+  closeModal('modalMovEdit');
+  showToast('Movimiento actualizado ✓');
+  renderMovimientos();
+}
+
+async function confirmDeleteMov(){
+  const id=parseInt(document.getElementById('editMovId').value);
+  const m=movimientos.find(x=>x.id===id);
+  if(!m)return;
+  // If part of cuota group, ask if delete all
+  if(m.grupo_cuota){
+    const grupo=movimientos.filter(x=>x.grupo_cuota===m.grupo_cuota);
+    const cuotasRestantes=grupo.filter(x=>x.fecha>=new Date().toISOString().split('T')[0]);
+    if(cuotasRestantes.length>1){
+      const resp=confirm(`Esta compra tiene ${grupo.length} cuotas (${cuotasRestantes.length} pendientes).\n\nOK = borrar TODAS las cuotas\nCancelar = borrar solo esta`);
+      if(resp){
+        const ids=grupo.map(x=>x.id);
+        await sb.from('movimientos').delete().in('id',ids);
+        movimientos=movimientos.filter(x=>!ids.includes(x.id));
+        closeModal('modalMovEdit');showToast(`${ids.length} cuotas eliminadas`);renderMovimientos();return;
+      }
+    }
+  }
+  if(!confirm('¿Eliminar este movimiento?'))return;
+  const{error}=await sb.from('movimientos').delete().eq('id',id);
+  if(error){console.error(error);return showToast('Error al eliminar');}
+  movimientos=movimientos.filter(x=>x.id!==id);
+  closeModal('modalMovEdit');showToast('Movimiento eliminado');renderMovimientos();
+}
+
 
 // ===== AGENDA =====
 function renderCalendar(){
@@ -1283,6 +1393,24 @@ function renderMesContent(tab){
           <span style="font-size:18px;font-weight:600;color:${balance>=0?'var(--green)':'var(--red)'};">${balance>=0?'+':''} $${fmt(Math.abs(balance))}</span>
         </div>
       </div>`;
+  }else if(tab==='saldos'){
+    // Saldo por cuenta = todas las entradas - todas las salidas agrupadas por medio
+    const porMedio={};
+    movimientos.forEach(m=>{
+      if(!porMedio[m.medio])porMedio[m.medio]={ent:0,sal:0};
+      if(m.tipo==='Entrada')porMedio[m.medio].ent+=Number(m.monto);
+      else porMedio[m.medio].sal+=Number(m.monto);
+    });
+    const filas=Object.entries(porMedio).map(([medio,v])=>({medio,saldo:v.ent-v.sal})).sort((a,b)=>b.saldo-a.saldo);
+    c.innerHTML=`
+      <div class="sec">Saldo por cuenta (histórico)</div>
+      <div class="card">
+        ${filas.map(f=>`<div class="mes-row">
+          <span class="mes-row-label">${f.medio}</span>
+          <span style="font-size:13px;font-weight:600;color:${f.saldo>=0?'var(--green)':'var(--red)'};">${f.saldo>=0?'+':''} $${fmt(Math.abs(f.saldo))}</span>
+        </div>`).join('')}
+      </div>
+      <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px;">Basado en todos los movimientos importados</p>`;
   }else{
     const byMedio={};salidas.forEach(m=>{byMedio[m.medio]=(byMedio[m.medio]||0)+Number(m.monto);});
     c.innerHTML=`
@@ -1510,14 +1638,33 @@ async function handleImport(input,tipo){
       for(const r of rows){
         const fecha=parsefecha(r['Fecha']||r['fecha']);
         if(!fecha)continue;
-        const yr=parseInt(fecha.split('-')[0]);if(yr!==2026)continue;
         const sal=parseFloat((r['Salida']||r['salida']||'0').toString().replace(/[^0-9.,-]/g,'').replace(',','.'))||0;
         const ent=parseFloat((r['Entrada']||r['entrada']||'0').toString().replace(/[^0-9.,-]/g,'').replace(',','.'))||0;
         const medio=r['Medio']||r['medio']||'Efectivo';
-        const categoria=r['Categoria']||r['Categoria']||r['categoria']||'Varios';
+        const categoria=r['Categoria']||r['Categoría']||r['categoria']||'Varios';
         const detalle=r['Detalle']||r['detalle']||'';
-        if(sal>0)toIns.push({tipo:'Salida',monto:Math.round(sal*100)/100,medio,categoria,detalle,cuotas:1,fecha});
-        if(ent>0)toIns.push({tipo:'Entrada',monto:Math.round(ent*100)/100,medio,categoria,detalle,cuotas:1,fecha});
+        const cuotasTotal=parseInt(r['Cuotas']||r['cuotas']||'1')||1;
+        const cuotaNro=parseInt(r['Cuota_nro']||r['cuota_nro']||'1')||1;
+        // If cuotas>1, generate remaining cuotas from cuotaNro forward
+        const grupoId=cuotasTotal>1?`imp_${fecha}_${medio}_${detalle}`.replace(/\s/g,'_').substring(0,40):null;
+        const processMonto=(monto,tipo)=>{
+          if(monto<=0)return;
+          if(cuotasTotal<=1){
+            toIns.push({tipo,monto:Math.round(monto*100)/100,medio,categoria,detalle,cuotas:1,cuota_nro:1,cuotas_total:1,grupo_cuota:null,fecha});
+          } else {
+            // Generate from cuotaNro to cuotasTotal
+            for(let i=cuotaNro;i<=cuotasTotal;i++){
+              const d=new Date(fecha+'T12:00:00');
+              d.setMonth(d.getMonth()+(i-cuotaNro));
+              const f=d.toISOString().split('T')[0];
+              toIns.push({tipo,monto:Math.round(monto*100)/100,medio,categoria,
+                detalle:`${detalle} (${i}/${cuotasTotal})`,
+                cuotas:cuotasTotal,cuota_nro:i,cuotas_total:cuotasTotal,grupo_cuota:grupoId,fecha:f});
+            }
+          }
+        };
+        processMonto(sal,'Salida');
+        processMonto(ent,'Entrada');
       }
       for(let i=0;i<toIns.length;i+=100)await sb.from('movimientos').insert(toIns.slice(i,i+100));
       movimientos=[...toIns.reverse(),...movimientos];count=toIns.length;
