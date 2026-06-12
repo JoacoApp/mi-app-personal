@@ -1416,7 +1416,7 @@ function renderMesContent(tab){
     c.innerHTML=`
       <div class="sec">Ingresos</div>
       <div class="card">
-        ${ingresos.length===0?'<p style="color:var(--text3);font-size:13px;">Sin ingresos este mes</p>':ingresos.map(m=>`<div class="mes-row"><span class="mes-row-label">${m.detalle||m.categoria}</span><span style="color:var(--green);font-size:13px;font-weight:500;">+$${fmt(m.monto)}</span></div>`).join('')}
+        ${ingresos.length===0?'<p style="color:var(--text3);font-size:13px;">Sin ingresos este mes</p>':Object.entries(ingresos.reduce((acc,m)=>{const k=m.categoria;acc[k]=(acc[k]||0)+Number(m.monto);return acc;},{})).sort((a,b)=>b[1]-a[1]).map(([cat,val])=>`<div class="mes-row"><span class="mes-row-label">${cat}</span><span style="color:var(--green);font-size:13px;font-weight:500;">+$${fmt(val)}</span></div>`).join('')}
         ${totalIn>0?`<div class="mes-row" style="border-top:1px solid var(--border);margin-top:4px;"><span style="font-size:11px;font-weight:600;color:var(--text3);">TOTAL</span><span style="color:var(--green);font-size:15px;font-weight:600;">$${fmt(totalIn)}</span></div>`:''}
       </div>
       ${generalCats.length>0?`<div class="sec">Gastos por categoria</div><div class="card">${generalCats.sort((a,b)=>b[1]-a[1]).map(([cat,val])=>`<div class="mes-row"><span class="mes-row-label">${cat}</span><span class="mes-row-value confirmed" style="font-size:13px;font-weight:500;">-$${fmt(val)}</span></div>`).join('')}</div>`:''}
@@ -1733,3 +1733,4 @@ window.addEventListener('load',()=>{document.getElementById('loading').style.dis
 </script>
 </body>
 </html>
+
