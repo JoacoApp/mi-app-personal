@@ -1055,9 +1055,9 @@ async function saveMov(){
   const grupoId=cuotasTotal>1?Date.now().toString(36):null;
   const rows=[];
   for(let i=0;i<cuotasTotal;i++){
-    const d=new Date(fechaBase+'T12:00:00');
-    d.setMonth(d.getMonth()+i);
-    const f=d.toISOString().split('T')[0];
+    const parts=fechaBase.split('-');
+    const d=new Date(parseInt(parts[0]),parseInt(parts[1])-1+i,parseInt(parts[2]));
+    const f=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     rows.push({tipo:movTipo,monto:montoCuota,medio:lastMedio,categoria:lastCat,
       detalle:cuotasTotal>1?`${detalle} (${i+1}/${cuotasTotal})`:detalle,
       cuotas:cuotasTotal,cuota_nro:i+1,cuotas_total:cuotasTotal,grupo_cuota:grupoId,fecha:f});
@@ -1654,9 +1654,9 @@ async function handleImport(input,tipo){
           } else {
             // Generate from cuotaNro to cuotasTotal
             for(let i=cuotaNro;i<=cuotasTotal;i++){
-              const d=new Date(fecha+'T12:00:00');
-              d.setMonth(d.getMonth()+(i-cuotaNro));
-              const f=d.toISOString().split('T')[0];
+              const parts=fecha.split('-');
+              const d=new Date(parseInt(parts[0]),parseInt(parts[1])-1+(i-cuotaNro),parseInt(parts[2]));
+              const f=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
               toIns.push({tipo,monto:Math.round(monto*100)/100,medio,categoria,
                 detalle:`${detalle} (${i}/${cuotasTotal})`,
                 cuotas:cuotasTotal,cuota_nro:i,cuotas_total:cuotasTotal,grupo_cuota:grupoId,fecha:f});
@@ -1695,5 +1695,6 @@ window.addEventListener('load',()=>{document.getElementById('loading').style.dis
 </script>
 </body>
 </html>
+
 
 
