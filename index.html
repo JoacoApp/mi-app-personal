@@ -686,8 +686,36 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 
 // STATE
 let movimientos=[],notas=[],alacena=[],onixData=[],jcData=[],recordatorios=[],horas=[],mesOverrides={};
-let categorias=['Comida','Farmacia','JC','Limpieza','Varios','Vehículo','Doméstica','Servicios','Salud','Ropa','Educación','Combustible'];
-const medios=['Efectivo','Débito Santander','Visa Santander','Amex Santander','Visa Hipotecario','MC Hipotecario','MC Mercadopago'];
+
+let categoriasConfig={
+  'Sueldo':'ingreso','Reintegros-Devoluciones-Intereses':'ingreso','Inicial':'ingreso',
+  'Comida':'egreso-general','Farmacia':'egreso-general','Juan Cruz':'egreso-general',
+  'Limpieza':'egreso-general','Varios casa':'egreso-general','Regalos':'egreso-general',
+  'Timba':'egreso-general','Pinturelis':'egreso-general','Formación':'egreso-general',
+  'Traslado':'egreso-general','A mamasilvia':'egreso-general','Mantenimiento casa':'egreso-general',
+  'Impuestos tarjetas':'egreso-general','Combustible':'egreso-general','Seguro Onix':'egreso-general',
+  'Mantenimiento vehículo':'egreso-general','Compra Onix':'egreso-general',
+  'Celular Joaco':'egreso-servicios','TGI':'egreso-servicios','Agua':'egreso-servicios',
+  'Internet Casa':'egreso-servicios','Internet Suegra':'egreso-servicios',
+  'Pegazo':'egreso-servicios','Seguro Casa':'egreso-servicios','API':'egreso-servicios',
+  'Tarjeta Visa Santander':'egreso-tarjetas','Tarjeta Visa ICBC':'egreso-tarjetas',
+  'Tarjeta Mastercard ICBC':'egreso-tarjetas','Tarjeta Mastercard Mercadopago':'egreso-tarjetas',
+  'Transferencia a ICBC':'transferencia','Transferencia a Mercadopago':'transferencia',
+  'Transferencia a Patagonia':'transferencia','Transferencia a Santander':'transferencia',
+  'Transferencia a Cocos':'transferencia','Transferencia a Ayelen':'transferencia',
+  'Transferencia a Efectivo':'transferencia','Transferencia a PersonalPay':'transferencia',
+  'Transferencia de ICBC':'transferencia','Transferencia de Mercadopago':'transferencia',
+  'Transferencia de Santander':'transferencia','Transferencia de Cocos':'transferencia',
+};
+function getCatGrupo(cat){
+  const s=localStorage.getItem('categoriasConfig');
+  if(s){const extra=JSON.parse(s);if(extra[cat])return extra[cat];}
+  return categoriasConfig[cat]||'egreso-general';
+}
+function saveCategoriasConfig(){localStorage.setItem('categoriasConfig',JSON.stringify(categoriasConfig));}
+
+let categorias=Object.keys(categoriasConfig).filter(c=>getCatGrupo(c)!=='transferencia');
+const medios=['Efectivo','Débito Santander','Visa Santander','Amex Santander','Visa Hipotecario','MC Hipotecario','MC Mercadopago','Patagonia','ICBC','Mercadopago','Santander','PersonalPay','Cocos'];
 let movTipo='Salida',onixTipo='carga',jcTipo='medicion';
 let calYear,calMonth,calSelectedDay,mesYear,mesMonth;
 let movFiltroMedio='',selectedMovDate=null;
@@ -1705,7 +1733,3 @@ window.addEventListener('load',()=>{document.getElementById('loading').style.dis
 </script>
 </body>
 </html>
-
-
-
-
