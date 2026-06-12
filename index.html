@@ -743,6 +743,7 @@ async function startApp(){
 }
 
 async function loadAll(){
+  loadCategoriasConfig();
   try{
     const[m,n,a,o,j,r,h]=await Promise.all([
       sb.from('movimientos').select('*').order('fecha',{ascending:false}),
@@ -756,7 +757,7 @@ async function loadAll(){
     movimientos=m.data||[];notas=n.data||[];alacena=a.data||[];
     onixData=o.data||[];jcData=j.data||[];recordatorios=r.data||[];horas=h.data||[];
     const cats=[...new Set(movimientos.map(x=>x.categoria).filter(Boolean))];
-    cats.forEach(c=>{if(!categorias.includes(c))categorias.push(c);});
+    cats.forEach(c=>{if(!categorias.includes(c))categorias.push(c);if(!categoriasConfig[c])categoriasConfig[c]='egreso-general';});
     const saved=localStorage.getItem('mes_overrides');
     if(saved)mesOverrides=JSON.parse(saved);
   }catch(e){console.error(e);}
@@ -961,8 +962,17 @@ function selectCat(c){
 }
 
 function addNewCat(){
-  const n=prompt('Nueva categoría:');
-  if(n&&n.trim()){categorias.push(n.trim());selectCat(n.trim());}
+  const n=prompt('Nueva categoria:');
+  if(!n||!n.trim())return;
+  const grupos=['ingreso','egreso-general','egreso-servicios','egreso-tarjetas'];
+  const labels=['Ingreso','Egreso - General','Egreso - Servicios','Egreso - Tarjetas'];
+  const gStr=prompt('Grupo (escribi el numero):\n1. Ingreso\n2. Egreso - General\n3. Egreso - Servicios\n4. Egreso - Tarjetas');
+  const idx=parseInt(gStr)-1;
+  const grupo=grupos[idx]||'egreso-general';
+  categoriasConfig[n.trim()]=grupo;
+  saveCategoriasConfig();
+  if(!categorias.includes(n.trim()))categorias.push(n.trim());
+  selectCat(n.trim());
 }
 
 function setMovTipo(t){
@@ -1224,14 +1234,18 @@ function getPrevVal(cat){
 
 function renderMesContent(tab){
   const c=document.getElementById('mesContent');
+  const todosMes=getMesMovs(null);
+  // Ingresos: solo categorias marcadas como 'ingreso'
+  const ingresos=todosMes.filter(m=>m.tipo==='Entrada'&&getCatGrupo(m.categoria)==='ingreso');
+  // Salidas: todo tipo Salida
   const salidas=getMesMovs('Salida');
-  const entradas=getMesMovs('Entrada');
-  const totalIn=entradas.reduce((s,m)=>s+Number(m.monto),0);
+  const totalIn=ingresos.reduce((s,m)=>s+Number(m.monto),0);
   const totalOut=salidas.reduce((s,m)=>s+Number(m.monto),0);
   const balance=totalIn-totalOut;
   const key=`${mesYear}-${mesMonth}`;
-  const servicios=['EPE','Gas NEA','Agua','API','TGI Comuna','Seguro casa','Celular','Celular Ayelen','Internet','Internet suegra','Pegazo'];
-  const tarjetas=['Visa Santander','Amex Santander','Visa Hipotecario','MC Hipotecario','MC Mercadopago'];
+  // Servicios y tarjetas dinamicos desde categoriasConfig
+  const serviciosCats=Object.entries(categoriasConfig).filter(([,g])=>g==='egreso-servicios').map(([c])=>c);
+  const tarjetasCats=Object.entries(categoriasConfig).filter(([,g])=>g==='egreso-tarjetas').map(([c])=>c);
   const byCat={};salidas.forEach(m=>{byCat[m.categoria]=(byCat[m.categoria]||0)+Number(m.monto);});
 
   if(tab==='resumen'){
@@ -1247,18 +1261,20 @@ function renderMesContent(tab){
         </div>
       </div>`;
     };
-    const regularCats=Object.entries(byCat).filter(([c])=>!servicios.includes(c)&&!tarjetas.includes(c));
+    const generalCats=Object.entries(byCat).filter(([cat])=>getCatGrupo(cat)==='egreso-general');
+    const serviciosConMov=serviciosCats.filter(s=>byCat[s]>0||getPrevVal(s)>0||Object.keys(mesOverrides).some(k=>k.includes(s)));
+    const tarjetasConMov=tarjetasCats.filter(t=>byCat[t]>0||getPrevVal(t)>0||Object.keys(mesOverrides).some(k=>k.includes(t)));
+    const allServicios=[...new Set([...serviciosCats,...serviciosConMov])];
+    const allTarjetas=[...new Set([...tarjetasCats,...tarjetasConMov])];
     c.innerHTML=`
       <div class="sec">Ingresos</div>
       <div class="card">
-        ${entradas.length===0?'<p style="color:var(--text3);font-size:13px;">Sin ingresos este mes</p>':entradas.map(m=>`<div class="mes-row"><span class="mes-row-label">${m.detalle||m.categoria}</span><span style="color:var(--green);font-size:13px;font-weight:500;">+$${fmt(m.monto)}</span></div>`).join('')}
+        ${ingresos.length===0?'<p style="color:var(--text3);font-size:13px;">Sin ingresos este mes</p>':ingresos.map(m=>`<div class="mes-row"><span class="mes-row-label">${m.detalle||m.categoria}</span><span style="color:var(--green);font-size:13px;font-weight:500;">+$${fmt(m.monto)}</span></div>`).join('')}
         ${totalIn>0?`<div class="mes-row" style="border-top:1px solid var(--border);margin-top:4px;"><span style="font-size:11px;font-weight:600;color:var(--text3);">TOTAL</span><span style="color:var(--green);font-size:15px;font-weight:600;">$${fmt(totalIn)}</span></div>`:''}
       </div>
-      ${regularCats.length>0?`<div class="sec">Gastos por categoría</div><div class="card">${regularCats.sort((a,b)=>b[1]-a[1]).map(([cat,val])=>`<div class="mes-row"><span class="mes-row-label">${cat}</span><span class="mes-row-value confirmed" style="font-size:13px;font-weight:500;">-$${fmt(val)}</span></div>`).join('')}</div>`:''}
-      <div class="sec">Tarjetas</div>
-      <div class="card">${tarjetas.map(t=>makeRow(t,t)).join('')}</div>
-      <div class="sec">Servicios del hogar</div>
-      <div class="card">${servicios.map(s=>makeRow(s,s)).join('')}</div>
+      ${generalCats.length>0?`<div class="sec">Gastos por categoria</div><div class="card">${generalCats.sort((a,b)=>b[1]-a[1]).map(([cat,val])=>`<div class="mes-row"><span class="mes-row-label">${cat}</span><span class="mes-row-value confirmed" style="font-size:13px;font-weight:500;">-$${fmt(val)}</span></div>`).join('')}</div>`:''}
+      ${allTarjetas.length>0?`<div class="sec">Tarjetas</div><div class="card">${allTarjetas.map(t=>makeRow(t,t)).join('')}</div>`:''}
+      ${allServicios.length>0?`<div class="sec">Servicios del hogar</div><div class="card">${allServicios.map(s=>makeRow(s,s)).join('')}</div>`:''}
       <div class="sec">Balance</div>
       <div class="card">
         <div class="mes-row"><span class="mes-row-label">Ingresos</span><span style="color:var(--green);font-size:13px;font-weight:500;">+$${fmt(totalIn)}</span></div>
@@ -1499,7 +1515,7 @@ async function handleImport(input,tipo){
         const sal=parseFloat((r['Salida']||r['salida']||'0').toString().replace(/[^0-9.,-]/g,'').replace(',','.'))||0;
         const ent=parseFloat((r['Entrada']||r['entrada']||'0').toString().replace(/[^0-9.,-]/g,'').replace(',','.'))||0;
         const medio=r['Medio']||r['medio']||'Efectivo';
-        const categoria=r['Categoria']||r['Categoría']||r['categoria']||'Varios';
+        const categoria=r['Categoria']||r['Categoria']||r['categoria']||'Varios';
         const detalle=r['Detalle']||r['detalle']||'';
         if(sal>0)toIns.push({tipo:'Salida',monto:Math.round(sal*100)/100,medio,categoria,detalle,cuotas:1,fecha});
         if(ent>0)toIns.push({tipo:'Entrada',monto:Math.round(ent*100)/100,medio,categoria,detalle,cuotas:1,fecha});
@@ -1533,3 +1549,4 @@ window.addEventListener('load',()=>{document.getElementById('loading').style.dis
 </script>
 </body>
 </html>
+
