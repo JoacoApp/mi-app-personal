@@ -743,7 +743,6 @@ async function startApp(){
 }
 
 async function loadAll(){
-  loadCategoriasConfig();
   try{
     const[m,n,a,o,j,r,h]=await Promise.all([
       sb.from('movimientos').select('*').order('fecha',{ascending:false}),
@@ -1549,4 +1548,5 @@ window.addEventListener('load',()=>{document.getElementById('loading').style.dis
 </script>
 </body>
 </html>
+
 
